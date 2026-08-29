@@ -40,3 +40,23 @@
 2. **代碼品質與維護**：
    - 保持現有註解與說明文件的完整性。
    - 每次修改後需進行相應的驗證與測試。
+
+---
+
+## 4. 目前專案規格與進度 (Current Specs & Status)
+
+- **進行中變更 (Active Change)**：`agentmeter-mvp`（位於 [`openspec/changes/agentmeter-mvp/`](openspec/changes/agentmeter-mvp/)）
+- **目前階段**：OpenSpec Proposal 規劃階段完成（包含 `proposal.md`、`specs/`、`design.md`、`tasks.md`，全繁體中文）。
+- **MVP 支援範圍**：
+  - 核心平台：macOS 26+ SwiftUI 原生應用程式（Desktop 視窗 + Menu Bar 圖示 Popover）。
+  - Provider：僅支援 **ChatGPT Codex**（透過官方 CLI `app-server` JSON-RPC `account/rateLimits/read`）。
+  - 9 大 Capabilities：
+    1. `codex-rate-limit-provider`：Codex app-server 整合與動態額度解析。
+    2. `usage-dashboard`：Desktop 完整額度監控儀表板。
+    3. `menu-bar-usage`：Menu Bar 常駐 Popover 與 Smart Cache。
+    4. `codex-environment-setup`：CLI PATH 偵測與引導。
+    5. `agentmeter-settings`：本機偏好設定、快取 TTL 與開機啟動。
+    6. `agentmeter-diagnostics`：環境診斷與敏感資訊遮蔽報告。
+    7. `agent-provider-abstraction`：Provider 抽象層解耦。
+    8. `localization`：繁體中文與英文在地化。
+    9. `homebrew-distribution`：GitHub Releases + Homebrew Cask 發布與 `--zap`。
