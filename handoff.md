@@ -9,7 +9,18 @@
 - **專案名稱**：AgentMeter
 - **定位**：macOS 原生（macOS 15+ / 26+）AI Agent 額度與用量即時監控工具（MenuBar 常駐 + Desktop 獨立視窗）。
 - **遠端倉庫**：`https://github.com/yuhaw0715/AgentMeter.git`（主要分支：`main`）
-- **目前進度**：`agentmeter-mvp` 階段已 100% 實作完成，代碼全數通過測試並已推送到遠端倉庫。
+- **目前進度**：`agentmeter-mvp` 階段已 100% 實作完成，代碼全數通過測試並已推送到遠端倉庫；下一階段 `add-antigravity-usage` 已完成 OpenSpec 規劃，尚未開始實作。
+
+### 下一階段規劃：Google Antigravity Gemini 額度
+
+- 新增獨立的 **Google Antigravity** Provider 與 Dashboard。
+- 依賴官方 Antigravity CLI **1.1.11+**，以 `agy -p "/usage" --output-format json` 執行不耗用 Agent 額度的唯讀查詢。
+- 僅支援 CLI 既有的 **Google 帳號登入**；不支援 `GEMINI_API_KEY`，亦不由 AgentMeter 管理 OAuth、Keychain 或憑證。
+- 動態顯示所有有效的 **Gemini Models** 額度 bucket；不顯示 Claude、GPT、其他第三方模型、AI Credits、Email 或訂閱方案。
+- 自動搜尋 `~/.local/bin/agy`、常見位置與 `PATH`，並支援使用者自訂 CLI 路徑。
+- Antigravity 使用一次性子行程與 10 秒逾時，沿用 Smart Cache TTL，但與 Codex 保持獨立快照、載入及錯誤狀態。
+- Menu Bar 依 Provider 分組；Antigravity 首次取得的所有有效 Gemini bucket 預設全部釘選。
+- 詳細規格位於 [`openspec/changes/add-antigravity-usage/`](openspec/changes/add-antigravity-usage/)，須經使用者核准後才進入實作。
 
 ---
 
@@ -24,8 +35,10 @@ graph TD
     VM --> Settings[SettingsManager]
     VM --> ProviderRegistry[ProviderRegistry]
     ProviderRegistry --> CodexProvider[CodexRateLimitProvider]
+    ProviderRegistry -. Planned .-> AntigravityProvider[AntigravityRateLimitProvider]
     CodexProvider --> ProcessMgr[CodexProcessManager stdio JSON-RPC]
     CodexProvider --> EnvDetector[CodexEnvironmentDetector]
+    AntigravityProvider -. Planned .-> AgyCLI["agy /usage JSON"]
     ProcessMgr --> HostCLI["codex app-server (/opt/homebrew/bin/codex)"]
 ```
 
@@ -41,6 +54,7 @@ graph TD
    - `CodexProcessManager`：底層 JSON-RPC 2.0 stdio 串流處理器。發送請求前自動執行 `initialize` 握手協議，確保與官方 `codex app-server` 連線順暢。
    - `CodexRateLimitProvider`：精確解析官方 `rateLimits` 物件（`primary` 5 小時工作階段額度、`secondary` 每週額度、`planType` 方案等級），並支援動態未知額度的向下相容解析。
    - `CodexEnvironmentDetector`：自動掃描 `/opt/homebrew/bin/codex`、`/usr/local/bin`、`PATH` 或使用者自訂路徑。
+   - **規劃中**：`Sources/AgentMeterCore/Providers/Antigravity/` 將隔離 `agy` 路徑／版本偵測、一次性子行程及 Gemini bucket JSON 正規化。
 
 3. **Services & ViewModel Layer (`Sources/AgentMeterCore/Services/ & ViewModels/`)**：
    - `SmartCacheManager`：記憶體快取與可自訂 TTL（預設 5 分鐘），避免對本機 CLI 造成過度頻繁負載。
@@ -105,8 +119,10 @@ AgentMeter/
 ├── Tests/
 │   └── AgentMeterTests/       # 19 項單元與整合測試套件
 └── openspec/                  # OpenSpec 規格資料夾
+    ├── specs/                 # 已生效的 MVP 主規格
     └── changes/
-        └── agentmeter-mvp/    # MVP 變更規格（proposal, specs, design, tasks）
+        ├── add-antigravity-usage/ # 下一階段規劃（尚未實作）
+        └── archive/2026-08-29-agentmeter-mvp/ # 已歸檔 MVP 規格
 ```
 
 ---

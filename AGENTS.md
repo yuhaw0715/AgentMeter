@@ -46,8 +46,9 @@
 
 ## 4. 目前專案規格與進度 (Current Specs & Status)
 
-- **進行中變更 (Active Change)**：`agentmeter-mvp`（位於 [`openspec/changes/agentmeter-mvp/`](openspec/changes/agentmeter-mvp/)）
-- **目前階段**：MVP 實作與各項 UI / 視覺微調全數完成（19 項測試 100% 通過，包含本機 Codex app-server 實測連線）。
+- **已歸檔變更**：`agentmeter-mvp`（位於 [`openspec/changes/archive/2026-08-29-agentmeter-mvp/`](openspec/changes/archive/2026-08-29-agentmeter-mvp/)）
+- **進行中變更 (Active Change)**：`add-antigravity-usage`（位於 [`openspec/changes/add-antigravity-usage/`](openspec/changes/add-antigravity-usage/)）
+- **目前階段**：MVP 已完成並通過 19 項測試；Google Antigravity Gemini 額度功能已完成 OpenSpec 規劃並通過嚴格驗證，尚未開始實作。
 - **MVP 支援範圍**：
   - 核心平台：macOS 26+ SwiftUI 原生應用程式（Desktop 視窗 + Menu Bar 圖示 Popover）。
   - 視覺設計：Menu Bar 採用 Concept 2（極簡粗體 AM Monogram），App 圖示採用 Option B4（深炭灰去背 Squircle 滿版圖示）。
@@ -62,3 +63,9 @@
     7. `agent-provider-abstraction`：Provider 抽象層解耦。
     8. `localization`：繁體中文、英文與系統預設之即時多國語言切換，以及 yyyy-MM-dd HH:mm:ss 時間格式。
     9. `homebrew-distribution`：GitHub Releases + Homebrew Cask 發布與 `--zap`。
+
+- **下一階段規劃範圍**：
+  - 新增 Google Antigravity Provider 與獨立 Dashboard。
+  - 依賴官方 Antigravity CLI 1.1.11+，透過 `agy -p "/usage" --output-format json` 查詢額度。
+  - 僅支援 Google 帳號登入及所有有效 Gemini Models 額度；不納入 Gemini API Key、Claude/GPT 額度或 AI Credits。
+  - Codex 與 Antigravity 使用獨立快照、載入及錯誤狀態，Menu Bar 依 Provider 分組顯示。
