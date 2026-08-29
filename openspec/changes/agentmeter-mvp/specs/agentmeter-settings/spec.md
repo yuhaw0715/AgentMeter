@@ -1,6 +1,6 @@
 ## Purpose
 
-於本機管理使用者偏好設定，包含 Menu Bar 顯示額度選取、Smart Cache TTL、自訂執行檔路徑以及開機時自動啟動 (Launch at Login)。
+於本機管理使用者偏好設定，包含開機時自動啟動 (Launch at Login)、Smart Cache TTL、介面語言切換以及自訂執行檔路徑。
 
 ## ADDED Requirements
 
@@ -11,16 +11,12 @@
 - **WHEN** 使用者修改任何設定項目
 - **THEN** 設定會立即持久化儲存至本機，並套用至執行階段行為
 
-### Requirement: Menu Bar 額度偏好與重置
-設定畫面 SHALL 允許使用者勾選顯示/隱藏各項額度、自訂排列順序，並提供恢復預設功能。
+### Requirement: 一般設定區塊佈局與右對齊
+一般設定區塊 SHALL 依序提供開機啟動、快取時間與介面語言選單，下拉選單皆對齊至右側邊緣。
 
-#### Scenario: 重新排序與切換額度
-- **WHEN** 使用者在 Settings 中啟用/停用或拖曳調整額度排序
-- **THEN** 變更會立即儲存並反映於 Menu Bar Popover 中
-
-#### Scenario: 恢復自動預設值
-- **WHEN** 使用者點擊「恢復自動預設值 (Restore Automatic Defaults)」
-- **THEN** 系統將額度顯示清單與排序重置為推薦的預設配置
+#### Scenario: 選單順序與右對齊
+- **WHEN** 使用者開啟 Settings 頁面
+- **THEN** 一般設定區塊依序呈現「開機時自動啟動」、「Menu Bar 快取時間 (TTL)」與「介面語言」，兩組下拉選單寬度一致並右對齊
 
 ### Requirement: 快取 TTL 設定
 系統 SHALL 允許使用者自訂 Smart Cache 的過期時間門檻。

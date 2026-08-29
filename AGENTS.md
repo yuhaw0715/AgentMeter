@@ -36,6 +36,7 @@
 1. **規範驅動開發 (Spec-Driven)**：
    - 專案採用 OpenSpec 規範進行功能變更與規格管理（位於 [`openspec/`](openspec/) 目錄）。
    - 進行複雜改動前，先遵循規劃流程（Implementation Plan / OpenSpec Propose），經使用者核准後再行實作。
+   - **文件與計畫語言**：所有實作計畫（Implementation Plan）、OpenSpec 規劃文件（Proposals、Specs、Design、Tasks）及實作結案總結（Walkthrough）一律使用**繁體中文**撰寫。
 
 2. **代碼品質與維護**：
    - 保持現有註解與說明文件的完整性。
@@ -46,17 +47,18 @@
 ## 4. 目前專案規格與進度 (Current Specs & Status)
 
 - **進行中變更 (Active Change)**：`agentmeter-mvp`（位於 [`openspec/changes/agentmeter-mvp/`](openspec/changes/agentmeter-mvp/)）
-- **目前階段**：OpenSpec Proposal 規劃階段完成（包含 `proposal.md`、`specs/`、`design.md`、`tasks.md`，全繁體中文）。
+- **目前階段**：MVP 實作與各項 UI / 視覺微調全數完成（19 項測試 100% 通過，包含本機 Codex app-server 實測連線）。
 - **MVP 支援範圍**：
   - 核心平台：macOS 26+ SwiftUI 原生應用程式（Desktop 視窗 + Menu Bar 圖示 Popover）。
-  - Provider：僅支援 **ChatGPT Codex**（透過官方 CLI `app-server` JSON-RPC `account/rateLimits/read`）。
+  - 視覺設計：Menu Bar 採用 Concept 2（極簡粗體 AM Monogram），App 圖示採用 Option B4（深炭灰去背 Squircle 滿版圖示）。
+  - Provider：支援 **ChatGPT Codex**（透過官方 CLI `app-server` JSON-RPC `initialize` 握手與 `account/rateLimits/read`）。
   - 9 大 Capabilities：
-    1. `codex-rate-limit-provider`：Codex app-server 整合與動態額度解析。
-    2. `usage-dashboard`：Desktop 完整額度監控儀表板。
-    3. `menu-bar-usage`：Menu Bar 常駐 Popover 與 Smart Cache。
+    1. `codex-rate-limit-provider`：Codex app-server JSON-RPC 握手與 5h / Weekly 動態額度解析。
+    2. `usage-dashboard`：Desktop 完整額度儀表板、雙列標頭、左側即時 Menu Bar 釘選核取方塊。
+    3. `menu-bar-usage`：Menu Bar 常駐 AM 圖示 Popover、Smart Cache 與即時響應式項目同步。
     4. `codex-environment-setup`：CLI PATH 偵測與引導。
-    5. `agentmeter-settings`：本機偏好設定、快取 TTL 與開機啟動。
+    5. `agentmeter-settings`：本機偏好設定、快取 TTL、開機啟動與右對齊選單。
     6. `agentmeter-diagnostics`：環境診斷與敏感資訊遮蔽報告。
     7. `agent-provider-abstraction`：Provider 抽象層解耦。
-    8. `localization`：繁體中文與英文在地化。
+    8. `localization`：繁體中文、英文與系統預設之即時多國語言切換，以及 yyyy-MM-dd HH:mm:ss 時間格式。
     9. `homebrew-distribution`：GitHub Releases + Homebrew Cask 發布與 `--zap`。
