@@ -10,6 +10,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         setApplicationIcon()
     }
 
+    /// Keep the Menu Bar Extra alive when the last desktop window is closed.
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        // A Menu Bar Extra should remain available without showing AgentMeter as
+        // an active Dock application while its desktop window is closed.
+        _ = sender.setActivationPolicy(.accessory)
+        return false
+    }
+
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         NSApplication.shared.activate(ignoringOtherApps: true)
         if !flag {

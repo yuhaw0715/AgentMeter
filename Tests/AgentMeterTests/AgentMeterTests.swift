@@ -6,7 +6,7 @@ import Foundation
 struct AgentMeterTests {
     @Test("Version is defined")
     func testVersion() {
-        #expect(AgentMeterCore.version == "0.1.0")
+        #expect(AgentMeterCore.version == "0.1.1")
         #expect(AgentMeterCore.appName == "AgentMeter")
     }
 }

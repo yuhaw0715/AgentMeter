@@ -56,7 +56,7 @@ brew install --cask yuhaw0715/tap/agentmeter
 swift test
 ```
 
-目前共 12 套測試、31 項測試，涵蓋雙 Provider 解析、環境偵測、快取隔離、設定、診斷遮蔽與本機 CLI 整合。
+目前共 13 套測試、32 項測試，涵蓋雙 Provider 解析、環境偵測、快取隔離、設定、診斷遮蔽、App 生命週期與本機 CLI 整合。
 
 ### 編譯應用程式
 ```bash
@@ -74,7 +74,7 @@ swift build -c release
 腳本會執行 Release build、組裝並以 ad-hoc identity 簽署 `AgentMeter.app`、驗證 Bundle 與 ZIP 結構，成功後移除中間 App Bundle，最後只保留：
 
 ```text
-releases/AgentMeter-v0.1.0.zip
+releases/AgentMeter-v0.1.1.zip
 ```
 
 如需使用本機 Keychain 中的 Developer ID Application identity，可指定：
@@ -89,10 +89,10 @@ CODESIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)" \
 建立與 `Resources/Info.plist` 版本一致的 Git tag 後，可將 ZIP 上傳至 GitHub Release：
 
 ```bash
-gh release create v0.1.0 \
-  releases/AgentMeter-v0.1.0.zip \
+gh release create v0.1.1 \
+  releases/AgentMeter-v0.1.1.zip \
   --verify-tag \
-  --title "AgentMeter 0.1.0" \
+  --title "AgentMeter 0.1.1" \
   --generate-notes
 ```
 

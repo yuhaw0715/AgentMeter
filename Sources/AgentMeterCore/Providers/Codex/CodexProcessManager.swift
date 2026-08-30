@@ -45,7 +45,7 @@ public final class CodexProcessManager: CodexJSONRPCTransport, @unchecked Sendab
                 "clientInfo": [
                     "name": "AgentMeter",
                     "title": "AgentMeter",
-                    "version": "0.1.0"
+                    "version": AgentMeterCore.version
                 ],
                 "capabilities": NSNull()
             ]
