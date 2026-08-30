@@ -14,7 +14,10 @@ public protocol AgentProvider: Sendable {
 
 /// Registry managing active and supported Agent Providers.
 public final class ProviderRegistry: Sendable {
-    public static let shared = ProviderRegistry()
+    public static let shared = ProviderRegistry(providers: [
+        CodexRateLimitProvider(),
+        AntigravityRateLimitProvider()
+    ])
 
     private let providers: [ProviderType: any AgentProvider]
 
@@ -31,8 +34,8 @@ public final class ProviderRegistry: Sendable {
         return providers[type]
     }
 
-    /// Returns all registered providers that are supported in the current MVP.
+    /// Returns all registered providers that are supported in the app.
     public var supportedProviders: [any AgentProvider] {
-        return providers.values.filter { $0.providerType.isSupportedInMVP }
+        return providers.values.filter { $0.providerType.isSupported }
     }
 }

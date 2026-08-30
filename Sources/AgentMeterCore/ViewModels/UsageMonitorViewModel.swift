@@ -1,127 +1,205 @@
 import Foundation
 import Observation
 
-/// Coordinates application state, quota fetching, caching, and environment diagnostics.
+/// Coordinates application state, multi-provider quota fetching, caching, and diagnostics.
 @Observable
 @MainActor
 public final class UsageMonitorViewModel {
     public var selectedProvider: ProviderType = .codex
-    public var currentSnapshot: RateLimitSnapshot?
-    public var environmentStatus: EnvironmentStatus = .healthy
-    public var isRefreshing: Bool = false
-    public var lastError: String?
-    public var lastRefreshTime: Date?
+    public var snapshots: [ProviderType: RateLimitSnapshot] = [:]
+    public var environmentStatuses: [ProviderType: EnvironmentStatus] = [:]
+    public var refreshingProviders: Set<ProviderType> = []
+    public var lastErrors: [ProviderType: String] = [:]
+    public var lastRefreshTimes: [ProviderType: Date] = [:]
     public var selectedLimitVersion: Int = 0
 
     public let cacheManager: SmartCacheManager
     public let settingsManager: SettingsManager
-    private let provider: any AgentProvider
+    public let providerRegistry: ProviderRegistry
 
     public init(
+        providerRegistry: ProviderRegistry = .shared,
         provider: (any AgentProvider)? = nil,
         cacheManager: SmartCacheManager = .shared,
         settingsManager: SettingsManager = .shared
     ) {
-        self.provider = provider ?? CodexRateLimitProvider(
-            environmentDetector: CodexEnvironmentDetector(
-                customExecutablePath: settingsManager.customCodexPath.isEmpty ? nil : settingsManager.customCodexPath
-            )
-        )
         self.cacheManager = cacheManager
         self.settingsManager = settingsManager
-        self.currentSnapshot = cacheManager.currentSnapshot
+
+        if let singleProvider = provider {
+            self.providerRegistry = ProviderRegistry(providers: [singleProvider])
+        } else {
+            self.providerRegistry = providerRegistry
+        }
+
+        // Initialize snapshots from cache
+        for p in ProviderType.allCases {
+            if let cached = cacheManager.currentSnapshot(for: p) {
+                self.snapshots[p] = cached
+                self.lastRefreshTimes[p] = cached.fetchedAt
+            }
+        }
     }
 
-    /// Visible limits filtered according to user preferences.
+    // MARK: - Selected Provider Convenience Accessors
+
+    public var currentSnapshot: RateLimitSnapshot? {
+        get { snapshots[selectedProvider] }
+        set {
+            if let val = newValue {
+                snapshots[selectedProvider] = val
+            } else {
+                snapshots.removeValue(forKey: selectedProvider)
+            }
+        }
+    }
+
+    public var environmentStatus: EnvironmentStatus {
+        get { environmentStatuses[selectedProvider] ?? .healthy }
+        set { environmentStatuses[selectedProvider] = newValue }
+    }
+
+    public var isRefreshing: Bool {
+        get { refreshingProviders.contains(selectedProvider) }
+        set {
+            if newValue {
+                refreshingProviders.insert(selectedProvider)
+            } else {
+                refreshingProviders.remove(selectedProvider)
+            }
+        }
+    }
+
+    public var lastError: String? {
+        get { lastErrors[selectedProvider] }
+        set { lastErrors[selectedProvider] = newValue }
+    }
+
+    public var lastRefreshTime: Date? {
+        get { lastRefreshTimes[selectedProvider] }
+        set { lastRefreshTimes[selectedProvider] = newValue }
+    }
+
+    // MARK: - Visible Limits & Customization
+
+    /// Visible limits filtered according to user preferences for the selected provider.
     public var visibleLimits: [RateLimitItem] {
+        return visibleLimits(for: selectedProvider)
+    }
+
+    /// Visible limits filtered according to user preferences for a specific provider.
+    public func visibleLimits(for provider: ProviderType) -> [RateLimitItem] {
         _ = selectedLimitVersion
-        guard let snapshot = currentSnapshot else { return [] }
-        return settingsManager.resolveVisibleLimits(from: snapshot.items)
+        guard let snapshot = snapshots[provider] else { return [] }
+        return settingsManager.resolveVisibleLimits(from: snapshot.items, for: provider)
     }
 
     /// Checks if a specific limit ID is currently enabled for Menu Bar.
-    public func isLimitVisible(id: String) -> Bool {
+    public func isLimitVisible(id: String, provider: ProviderType? = nil) -> Bool {
         _ = selectedLimitVersion
-        if !settingsManager.hasCustomizedLimits {
+        let targetProvider = provider ?? selectedProvider
+        if !settingsManager.hasCustomizedLimits(for: targetProvider) {
             return true
         }
-        return settingsManager.selectedLimitIds.contains(id)
+        return settingsManager.selectedLimitIds(for: targetProvider).contains(id)
     }
 
-    /// Toggles or sets a limit ID's visibility for Menu Bar and triggers instant reactive updates.
-    public func setLimitVisibility(id: String, isVisible: Bool, allItems: [RateLimitItem]) {
-        if !settingsManager.hasCustomizedLimits {
-            settingsManager.selectedLimitIds = allItems.map { $0.id }
+    /// Toggles or sets a limit ID's visibility for Menu Bar.
+    public func setLimitVisibility(id: String, isVisible: Bool, allItems: [RateLimitItem], provider: ProviderType? = nil) {
+        let targetProvider = provider ?? selectedProvider
+        if !settingsManager.hasCustomizedLimits(for: targetProvider) {
+            settingsManager.setSelectedLimitIds(allItems.map { $0.id }, for: targetProvider)
         }
 
-        var current = Set(settingsManager.selectedLimitIds)
+        var current = Set(settingsManager.selectedLimitIds(for: targetProvider))
         if isVisible {
             current.insert(id)
         } else {
             current.remove(id)
         }
-        settingsManager.selectedLimitIds = Array(current)
+        settingsManager.setSelectedLimitIds(Array(current), for: targetProvider)
         selectedLimitVersion += 1
     }
 
-    /// Restores automatic default visibility for all limits.
-    public func restoreDefaultLimits() {
-        settingsManager.restoreAutomaticDefaults()
+    /// Restores automatic default visibility for a provider (or selected provider).
+    public func restoreDefaultLimits(for provider: ProviderType? = nil) {
+        let targetProvider = provider ?? selectedProvider
+        settingsManager.restoreAutomaticDefaults(for: targetProvider)
         selectedLimitVersion += 1
     }
 
-    /// Evaluates current environment status.
-    public func checkEnvironment() async {
-        let status = await provider.checkEnvironment()
-        self.environmentStatus = status
-    }
+    // MARK: - Environment & Refresh Operations
 
-    /// Active refresh triggered by Desktop app opening or manual trigger.
-    public func refreshDesktop() async {
-        await executeFetch(bypassCache: true)
-    }
-
-    /// Menu Bar refresh utilizing Smart Cache unless expired or forced.
-    public func refreshMenuBar(force: Bool = false) async {
-        if !force {
-            if let fresh = cacheManager.getFreshSnapshot(ttl: settingsManager.cacheTTLSeconds) {
-                self.currentSnapshot = fresh
-                self.lastError = nil
-                return
-            }
+    /// Evaluates current environment status for a specific provider (or selected provider).
+    public func checkEnvironment(for providerType: ProviderType? = nil) async {
+        let targetType = providerType ?? selectedProvider
+        guard let provider = providerRegistry.provider(for: targetType) else {
+            environmentStatuses[targetType] = .error(description: "Provider \(targetType.displayName) not found")
+            return
         }
-        await executeFetch(bypassCache: force)
+        let status = await provider.checkEnvironment()
+        environmentStatuses[targetType] = status
     }
 
-    /// Retry action when a previous refresh encountered an error.
-    public func retry() async {
-        await executeFetch(bypassCache: true)
+    /// Active refresh triggered by Desktop app opening or switching tabs (bypasses cache).
+    public func refreshDesktop(provider: ProviderType? = nil) async {
+        let targetProvider = provider ?? selectedProvider
+        await executeFetch(for: targetProvider, bypassCache: true)
     }
 
-    private func executeFetch(bypassCache: Bool) async {
-        guard !isRefreshing else { return }
+    /// Menu Bar refresh utilizing Smart Cache per provider unless expired or forced.
+    public func refreshMenuBar(force: Bool = false) async {
+        let supportedTypes = providerRegistry.supportedProviders.map { $0.providerType }
+        for p in supportedTypes {
+            if !force {
+                if let fresh = cacheManager.getFreshSnapshot(for: p, ttl: settingsManager.cacheTTLSeconds) {
+                    self.snapshots[p] = fresh
+                    self.lastRefreshTimes[p] = fresh.fetchedAt
+                    self.lastErrors[p] = nil
+                    continue
+                }
+            }
+            await executeFetch(for: p, bypassCache: force)
+        }
+    }
 
-        isRefreshing = true
-        lastError = nil
+    /// Retry action when a previous refresh encountered an error for a provider.
+    public func retry(for provider: ProviderType? = nil) async {
+        let targetProvider = provider ?? selectedProvider
+        await executeFetch(for: targetProvider, bypassCache: true)
+    }
 
-        await checkEnvironment()
-        guard environmentStatus.isReady else {
-            isRefreshing = false
+    /// Executes rate limit fetching for a specific provider.
+    public func executeFetch(for providerType: ProviderType, bypassCache: Bool) async {
+        guard !refreshingProviders.contains(providerType) else { return }
+
+        refreshingProviders.insert(providerType)
+        lastErrors[providerType] = nil
+
+        await checkEnvironment(for: providerType)
+        guard let status = environmentStatuses[providerType], status.isReady else {
+            refreshingProviders.remove(providerType)
+            return
+        }
+
+        guard let provider = providerRegistry.provider(for: providerType) else {
+            lastErrors[providerType] = "Provider \(providerType.displayName) not registered"
+            refreshingProviders.remove(providerType)
             return
         }
 
         do {
             let snapshot = try await provider.fetchRateLimits()
-            self.currentSnapshot = snapshot
-            self.lastRefreshTime = snapshot.fetchedAt
+            self.snapshots[providerType] = snapshot
+            self.lastRefreshTimes[providerType] = snapshot.fetchedAt
             self.cacheManager.store(snapshot)
-            self.lastError = nil
+            self.lastErrors[providerType] = nil
         } catch {
-            // When refresh fails, invalidate cache to avoid presenting stale data as current
-            self.cacheManager.invalidate()
-            self.lastError = error.localizedDescription
+            // Invalidate cache for this provider to avoid presenting stale data as current
+            self.cacheManager.invalidate(for: providerType)
+            self.lastErrors[providerType] = error.localizedDescription
         }
 
-        isRefreshing = false
+        refreshingProviders.remove(providerType)
     }
 }

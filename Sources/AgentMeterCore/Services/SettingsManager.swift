@@ -10,10 +10,19 @@ public final class SettingsManager: @unchecked Sendable {
     public enum Keys {
         public static let cacheTTLSeconds = "agentmeter.cacheTTLSeconds"
         public static let customCodexPath = "agentmeter.customCodexPath"
+        public static let customAntigravityPath = "agentmeter.customAntigravityPath"
         public static let selectedLimitIds = "agentmeter.selectedLimitIds"
         public static let hasCustomizedLimits = "agentmeter.hasCustomizedLimits"
         public static let launchAtLogin = "agentmeter.launchAtLogin"
         public static let appLanguage = "agentmeter.appLanguage"
+
+        public static func selectedLimitIdsKey(for provider: ProviderType) -> String {
+            return "agentmeter.selectedLimitIds.\(provider.rawValue)"
+        }
+
+        public static func hasCustomizedLimitsKey(for provider: ProviderType) -> String {
+            return "agentmeter.hasCustomizedLimits.\(provider.rawValue)"
+        }
     }
 
     public init(userDefaults: UserDefaults = .standard) {
@@ -55,52 +64,122 @@ public final class SettingsManager: @unchecked Sendable {
         }
     }
 
-    /// Whether the user has customized their visible limit list.
-    public var hasCustomizedLimits: Bool {
+    /// Custom Antigravity CLI executable path.
+    public var customAntigravityPath: String {
         get {
+            return userDefaults.string(forKey: Keys.customAntigravityPath) ?? ""
+        }
+        set {
+            userDefaults.set(newValue, forKey: Keys.customAntigravityPath)
+        }
+    }
+
+    /// Whether the user has customized visible limits for a provider.
+    public func hasCustomizedLimits(for provider: ProviderType) -> Bool {
+        let providerKey = Keys.hasCustomizedLimitsKey(for: provider)
+        if userDefaults.object(forKey: providerKey) != nil {
+            return userDefaults.bool(forKey: providerKey)
+        }
+        if provider == .codex {
             return userDefaults.bool(forKey: Keys.hasCustomizedLimits)
         }
-        set {
-            userDefaults.set(newValue, forKey: Keys.hasCustomizedLimits)
+        return false
+    }
+
+    /// Sets whether the user has customized visible limits for a provider.
+    public func setHasCustomizedLimits(_ customized: Bool, for provider: ProviderType) {
+        userDefaults.set(customized, forKey: Keys.hasCustomizedLimitsKey(for: provider))
+        if provider == .codex {
+            userDefaults.set(customized, forKey: Keys.hasCustomizedLimits)
         }
     }
 
-    /// Ordered list of user-selected limit IDs for Menu Bar display.
+    /// Ordered list of user-selected limit IDs for a provider.
+    public func selectedLimitIds(for provider: ProviderType) -> [String] {
+        let providerKey = Keys.selectedLimitIdsKey(for: provider)
+        if let list = userDefaults.stringArray(forKey: providerKey) {
+            return list
+        }
+        if provider == .codex, let legacyList = userDefaults.stringArray(forKey: Keys.selectedLimitIds) {
+            return legacyList
+        }
+        return []
+    }
+
+    /// Sets user-selected limit IDs for a provider.
+    public func setSelectedLimitIds(_ ids: [String], for provider: ProviderType) {
+        userDefaults.set(ids, forKey: Keys.selectedLimitIdsKey(for: provider))
+        setHasCustomizedLimits(true, for: provider)
+        if provider == .codex {
+            userDefaults.set(ids, forKey: Keys.selectedLimitIds)
+            userDefaults.set(true, forKey: Keys.hasCustomizedLimits)
+        }
+    }
+
+    /// Whether the user has customized their visible limit list (defaults to Codex).
+    public var hasCustomizedLimits: Bool {
+        get {
+            return hasCustomizedLimits(for: .codex)
+        }
+        set {
+            setHasCustomizedLimits(newValue, for: .codex)
+        }
+    }
+
+    /// Ordered list of user-selected limit IDs for Menu Bar display (defaults to Codex).
     public var selectedLimitIds: [String] {
         get {
-            return userDefaults.stringArray(forKey: Keys.selectedLimitIds) ?? []
+            return selectedLimitIds(for: .codex)
         }
         set {
-            userDefaults.set(newValue, forKey: Keys.selectedLimitIds)
-            hasCustomizedLimits = true
+            setSelectedLimitIds(newValue, for: .codex)
         }
     }
 
-    /// Restores the default automatic limits selection.
-    public func restoreAutomaticDefaults() {
-        userDefaults.removeObject(forKey: Keys.selectedLimitIds)
-        userDefaults.set(false, forKey: Keys.hasCustomizedLimits)
+    /// Restores the default automatic limits selection for a provider (or all providers if nil).
+    public func restoreAutomaticDefaults(for provider: ProviderType? = nil) {
+        if let provider = provider {
+            userDefaults.removeObject(forKey: Keys.selectedLimitIdsKey(for: provider))
+            userDefaults.set(false, forKey: Keys.hasCustomizedLimitsKey(for: provider))
+            if provider == .codex {
+                userDefaults.removeObject(forKey: Keys.selectedLimitIds)
+                userDefaults.set(false, forKey: Keys.hasCustomizedLimits)
+            }
+        } else {
+            userDefaults.removeObject(forKey: Keys.selectedLimitIds)
+            userDefaults.set(false, forKey: Keys.hasCustomizedLimits)
+            for p in ProviderType.allCases {
+                userDefaults.removeObject(forKey: Keys.selectedLimitIdsKey(for: p))
+                userDefaults.set(false, forKey: Keys.hasCustomizedLimitsKey(for: p))
+            }
+        }
     }
 
-    /// Filters and orders rate limits for Menu Bar presentation.
-    public func resolveVisibleLimits(from items: [RateLimitItem]) -> [RateLimitItem] {
-        if !hasCustomizedLimits || selectedLimitIds.isEmpty {
+    /// Filters and orders rate limits for Menu Bar presentation for a specific provider.
+    public func resolveVisibleLimits(from items: [RateLimitItem], for provider: ProviderType) -> [RateLimitItem] {
+        if !hasCustomizedLimits(for: provider) || selectedLimitIds(for: provider).isEmpty {
             return items
         }
 
+        let selected = selectedLimitIds(for: provider)
         var resultMap: [String: RateLimitItem] = [:]
         for item in items {
             resultMap[item.id] = item
         }
 
         var visibleItems: [RateLimitItem] = []
-        for id in selectedLimitIds {
+        for id in selected {
             if let item = resultMap[id] {
                 visibleItems.append(item)
             }
         }
 
         return visibleItems.isEmpty ? items : visibleItems
+    }
+
+    /// Filters and orders rate limits for Menu Bar presentation (defaults to Codex).
+    public func resolveVisibleLimits(from items: [RateLimitItem]) -> [RateLimitItem] {
+        return resolveVisibleLimits(from: items, for: .codex)
     }
 
     /// Launch at login preference.

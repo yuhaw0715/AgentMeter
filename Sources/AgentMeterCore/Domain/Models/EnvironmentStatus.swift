@@ -4,6 +4,7 @@ import Foundation
 public enum EnvironmentStatus: Equatable, Sendable {
     case healthy
     case cliMissing(expectedPath: String)
+    case unsupportedVersion(current: String, required: String)
     case notAuthenticated(message: String)
     case appServerUnavailable(reason: String)
     case error(description: String)

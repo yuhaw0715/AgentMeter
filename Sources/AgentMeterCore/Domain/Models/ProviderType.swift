@@ -15,12 +15,17 @@ public enum ProviderType: String, CaseIterable, Identifiable, Sendable, Codable 
         case .gemini:
             return "Google Gemini"
         case .antigravity:
-            return "Antigravity"
+            return "Google Antigravity"
         }
     }
 
-    /// In MVP, only ChatGPT Codex is exposed in UI.
+    /// Returns whether the provider is currently supported in the app.
+    public var isSupported: Bool {
+        return self == .codex || self == .antigravity
+    }
+
+    /// Retained for backwards compatibility with earlier MVP checks.
     public var isSupportedInMVP: Bool {
-        return self == .codex
+        return isSupported
     }
 }

@@ -3,6 +3,7 @@ import AgentMeterCore
 
 public enum NavigationSection: String, Hashable, CaseIterable {
     case codex = "codex"
+    case antigravity = "antigravity"
     case settings = "settings"
     case diagnostics = "diagnostics"
 
@@ -10,6 +11,8 @@ public enum NavigationSection: String, Hashable, CaseIterable {
         switch self {
         case .codex:
             return L10n.codexTitle
+        case .antigravity:
+            return L10n.antigravityTitle
         case .settings:
             return L10n.settingsTitle
         case .diagnostics:
@@ -21,6 +24,8 @@ public enum NavigationSection: String, Hashable, CaseIterable {
         switch self {
         case .codex:
             return "gauge.with.needle"
+        case .antigravity:
+            return "sparkles"
         case .settings:
             return "gearshape"
         case .diagnostics:
@@ -49,6 +54,14 @@ public struct MainDesktopContainerView: View {
                             Image(systemName: NavigationSection.codex.iconName)
                         }
                     }
+
+                    NavigationLink(value: NavigationSection.antigravity) {
+                        Label {
+                            Text(NavigationSection.antigravity.title)
+                        } icon: {
+                            Image(systemName: NavigationSection.antigravity.iconName)
+                        }
+                    }
                 }
 
                 Section(L10n.application) {
@@ -61,20 +74,34 @@ public struct MainDesktopContainerView: View {
                 }
             }
             .listStyle(.sidebar)
-            .navigationSplitViewColumnWidth(min: 180, ideal: 200, max: 240)
+            .navigationSplitViewColumnWidth(min: 190, ideal: 210, max: 250)
         } detail: {
             Group {
                 switch selectedSection ?? .codex {
                 case .codex:
-                    if !viewModel.environmentStatus.isReady {
-                        EnvironmentSetupView(status: viewModel.environmentStatus) {
+                    let status = viewModel.environmentStatuses[.codex] ?? .healthy
+                    if !status.isReady {
+                        EnvironmentSetupView(provider: .codex, status: status) {
                             Task {
-                                await viewModel.refreshDesktop()
+                                await viewModel.refreshDesktop(provider: .codex)
                             }
                         }
                     } else {
-                        UsageDashboardView(viewModel: viewModel)
+                        UsageDashboardView(viewModel: viewModel, provider: .codex)
                     }
+
+                case .antigravity:
+                    let status = viewModel.environmentStatuses[.antigravity] ?? .healthy
+                    if !status.isReady {
+                        EnvironmentSetupView(provider: .antigravity, status: status) {
+                            Task {
+                                await viewModel.refreshDesktop(provider: .antigravity)
+                            }
+                        }
+                    } else {
+                        UsageDashboardView(viewModel: viewModel, provider: .antigravity)
+                    }
+
                 case .settings:
                     SettingsView(viewModel: viewModel)
                 case .diagnostics:
@@ -83,8 +110,20 @@ public struct MainDesktopContainerView: View {
             }
             .frame(minWidth: 480, minHeight: 400)
         }
+        .onChange(of: selectedSection) { _, newSection in
+            if let section = newSection {
+                if section == .codex {
+                    viewModel.selectedProvider = .codex
+                    Task { await viewModel.refreshDesktop(provider: .codex) }
+                } else if section == .antigravity {
+                    viewModel.selectedProvider = .antigravity
+                    Task { await viewModel.refreshDesktop(provider: .antigravity) }
+                }
+            }
+        }
         .task {
-            await viewModel.refreshDesktop()
+            await viewModel.refreshDesktop(provider: .codex)
+            await viewModel.refreshDesktop(provider: .antigravity)
         }
     }
 }

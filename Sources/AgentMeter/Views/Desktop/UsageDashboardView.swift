@@ -1,12 +1,30 @@
 import SwiftUI
 import AgentMeterCore
 
-/// Main Desktop dashboard view showing all rate limits, refresh status, and inline Menu Bar display toggles for this Agent.
+/// Main Desktop dashboard view showing all rate limits, refresh status, and inline Menu Bar display toggles.
 public struct UsageDashboardView: View {
     @Bindable var viewModel: UsageMonitorViewModel
+    public let provider: ProviderType
 
-    public init(viewModel: UsageMonitorViewModel) {
+    public init(viewModel: UsageMonitorViewModel, provider: ProviderType = .codex) {
         self.viewModel = viewModel
+        self.provider = provider
+    }
+
+    private var snapshot: RateLimitSnapshot? {
+        viewModel.snapshots[provider]
+    }
+
+    private var isRefreshing: Bool {
+        viewModel.refreshingProviders.contains(provider)
+    }
+
+    private var lastError: String? {
+        viewModel.lastErrors[provider]
+    }
+
+    private var lastRefreshTime: Date? {
+        viewModel.lastRefreshTimes[provider]
     }
 
     public var body: some View {
@@ -14,13 +32,13 @@ public struct UsageDashboardView: View {
             VStack(alignment: .leading, spacing: 24) {
                 // Header Info Banner
                 VStack(spacing: 8) {
-                    // Row 1: Left: Provider Title + Plan Badge; Right: Refresh Button
+                    // Row 1: Left: Provider Title + Optional Plan Badge; Right: Refresh Button
                     HStack(alignment: .center) {
                         HStack(spacing: 8) {
-                            Text(viewModel.selectedProvider.displayName)
+                            Text(provider.displayName)
                                 .font(.title2.weight(.bold))
 
-                            if let plan = viewModel.currentSnapshot?.accountPlan {
+                            if provider == .codex, let plan = snapshot?.accountPlan {
                                 Text(plan)
                                     .font(.caption.weight(.semibold))
                                     .padding(.horizontal, 8)
@@ -35,11 +53,11 @@ public struct UsageDashboardView: View {
 
                         Button {
                             Task {
-                                await viewModel.refreshDesktop()
+                                await viewModel.refreshDesktop(provider: provider)
                             }
                         } label: {
                             HStack(spacing: 6) {
-                                if viewModel.isRefreshing {
+                                if isRefreshing {
                                     ProgressView()
                                         .controlSize(.small)
                                     Text(L10n.refreshing)
@@ -50,12 +68,12 @@ public struct UsageDashboardView: View {
                             }
                         }
                         .buttonStyle(.borderedProminent)
-                        .disabled(viewModel.isRefreshing)
+                        .disabled(isRefreshing)
                     }
 
-                    // Row 2: Left: Account Email; Right: Last Updated Timestamp
+                    // Row 2: Left: Account Email (for Codex); Right: Last Updated Timestamp
                     HStack(alignment: .center) {
-                        if let email = viewModel.currentSnapshot?.accountEmail {
+                        if provider == .codex, let email = snapshot?.accountEmail {
                             Text(email)
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
@@ -63,7 +81,7 @@ public struct UsageDashboardView: View {
 
                         Spacer()
 
-                        if let lastRefresh = viewModel.lastRefreshTime {
+                        if let lastRefresh = lastRefreshTime {
                             Text(L10n.updatedText(DateFormatterHelper.formatLastRefreshTime(lastRefresh)))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
@@ -74,7 +92,7 @@ public struct UsageDashboardView: View {
                 Divider()
 
                 // Error State Banner
-                if let error = viewModel.lastError {
+                if let error = lastError {
                     HStack(spacing: 12) {
                         Image(systemName: "exclamationmark.triangle.fill")
                             .foregroundStyle(.orange)
@@ -92,7 +110,7 @@ public struct UsageDashboardView: View {
 
                         Button(L10n.retry) {
                             Task {
-                                await viewModel.retry()
+                                await viewModel.retry(for: provider)
                             }
                         }
                         .buttonStyle(.bordered)
@@ -103,7 +121,7 @@ public struct UsageDashboardView: View {
                 }
 
                 // Section: Real-time Quotas with Left-Aligned Menu Bar Checkboxes
-                if let snapshot = viewModel.currentSnapshot, !snapshot.items.isEmpty {
+                if let snapshot = snapshot, !snapshot.items.isEmpty {
                     VStack(alignment: .leading, spacing: 14) {
                         HStack(alignment: .firstTextBaseline) {
                             VStack(alignment: .leading, spacing: 2) {
@@ -116,9 +134,9 @@ public struct UsageDashboardView: View {
 
                             Spacer()
 
-                            if viewModel.settingsManager.hasCustomizedLimits {
+                            if viewModel.settingsManager.hasCustomizedLimits(for: provider) {
                                 Button(L10n.restoreDefaults) {
-                                    viewModel.restoreDefaultLimits()
+                                    viewModel.restoreDefaultLimits(for: provider)
                                 }
                                 .buttonStyle(.plain)
                                 .font(.caption)
@@ -134,13 +152,14 @@ public struct UsageDashboardView: View {
                                         "",
                                         isOn: Binding(
                                             get: {
-                                                viewModel.isLimitVisible(id: item.id)
+                                                viewModel.isLimitVisible(id: item.id, provider: provider)
                                             },
                                             set: { isChecked in
                                                 viewModel.setLimitVisibility(
                                                     id: item.id,
                                                     isVisible: isChecked,
-                                                    allItems: snapshot.items
+                                                    allItems: snapshot.items,
+                                                    provider: provider
                                                 )
                                             }
                                         )
@@ -154,7 +173,7 @@ public struct UsageDashboardView: View {
                             }
                         }
                     }
-                } else if !viewModel.isRefreshing {
+                } else if !isRefreshing {
                     VStack(spacing: 12) {
                         Image(systemName: "gauge")
                             .font(.system(size: 40))

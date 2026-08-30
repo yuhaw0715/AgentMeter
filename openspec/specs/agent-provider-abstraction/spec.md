@@ -2,7 +2,7 @@
 
 ## Purpose
 
-建立具備可擴充性的 Agent 使用量 Provider 架構邊界，以利未來支援其他 Provider，並在 MVP 介面中僅暴露 Codex。
+建立具備可擴充性的 Agent 使用量 Provider 架構邊界，以利支援多 Provider 並維持狀態隔離。
 
 ## Requirements
 
@@ -13,9 +13,16 @@
 - **WHEN** UI 向目前啟用的 Provider 請求使用量快照
 - **THEN** Provider 抽象層提供正規化快照資料，不論底層 JSON-RPC/API 之具體細節
 
-### Requirement: MVP 階段的 Provider UI 隔離
-使用者介面 SHALL 專屬呈現 Codex Provider，並隱藏尚未實作的 Provider（如 Gemini 或 Antigravity）。
+### Requirement: 已支援 Provider 的 UI 呈現
+使用者介面 SHALL 僅呈現已完成支援的 Provider；顯示 ChatGPT Codex 與 Google Antigravity，並繼續隱藏尚未實作的 Provider（如 Gemini CLI）。
 
-#### Scenario: Desktop 與 Menu Bar UI 僅呈現 Codex Provider
-- **WHEN** 使用者在桌面應用程式或 Popover 中瀏覽 Provider 或導航選單
-- **THEN** 僅有 ChatGPT Codex 會被列出且可供存取
+#### Scenario: Desktop 與 Menu Bar 呈現已支援 Provider
+- **WHEN** 使用者瀏覽側邊欄或 Menu Bar Popover
+- **THEN** 系統可存取 ChatGPT Codex 與 Google Antigravity，且不列出尚未實作的 Provider
+
+### Requirement: Provider 執行狀態隔離
+每個已註冊 Provider SHALL 具有獨立的快照、載入、錯誤與最後更新狀態。
+
+#### Scenario: 單一 Provider 更新失敗
+- **WHEN** Codex 或 Antigravity 其中一個 Provider 更新失敗
+- **THEN** 錯誤只影響該 Provider，另一 Provider 的有效狀態與操作維持可用

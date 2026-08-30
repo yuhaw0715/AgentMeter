@@ -46,26 +46,22 @@
 
 ## 4. 目前專案規格與進度 (Current Specs & Status)
 
-- **已歸檔變更**：`agentmeter-mvp`（位於 [`openspec/changes/archive/2026-08-29-agentmeter-mvp/`](openspec/changes/archive/2026-08-29-agentmeter-mvp/)）
-- **進行中變更 (Active Change)**：`add-antigravity-usage`（位於 [`openspec/changes/add-antigravity-usage/`](openspec/changes/add-antigravity-usage/)）
-- **目前階段**：MVP 已完成並通過 19 項測試；Google Antigravity Gemini 額度功能已完成 OpenSpec 規劃並通過嚴格驗證，尚未開始實作。
-- **MVP 支援範圍**：
+- **已歸檔變更**：`agentmeter-mvp`（位於 [`openspec/changes/archive/2026-08-29-agentmeter-mvp/`](openspec/changes/archive/2026-08-29-agentmeter-mvp/)）、`add-antigravity-usage`（位於 [`openspec/changes/archive/2026-08-30-add-antigravity-usage/`](openspec/changes/archive/2026-08-30-add-antigravity-usage/)）
+- **目前階段**：ChatGPT Codex 與 Google Antigravity 雙 Provider 額度監控已全數實作完成，12 大測試套件共 31 項測試 100% 通過。
+- **支援範圍**：
   - 核心平台：macOS 26+ SwiftUI 原生應用程式（Desktop 視窗 + Menu Bar 圖示 Popover）。
   - 視覺設計：Menu Bar 採用 Concept 2（極簡粗體 AM Monogram），App 圖示採用 Option B4（深炭灰去背 Squircle 滿版圖示）。
-  - Provider：支援 **ChatGPT Codex**（透過官方 CLI `app-server` JSON-RPC `initialize` 握手與 `account/rateLimits/read`）。
-  - 9 大 Capabilities：
+  - Provider：
+    1. **ChatGPT Codex**：官方 CLI `app-server` JSON-RPC 握手與 5h / Weekly 動態額度解析。
+    2. **Google Antigravity**：官方 Antigravity CLI 1.1.11+ 唯讀非互動 JSON 查詢與 Gemini Models 額度動態解析。
+  - 10 大 Capabilities：
     1. `codex-rate-limit-provider`：Codex app-server JSON-RPC 握手與 5h / Weekly 動態額度解析。
-    2. `usage-dashboard`：Desktop 完整額度儀表板、雙列標頭、左側即時 Menu Bar 釘選核取方塊。
-    3. `menu-bar-usage`：Menu Bar 常駐 AM 圖示 Popover、Smart Cache 與即時響應式項目同步。
-    4. `codex-environment-setup`：CLI PATH 偵測與引導。
-    5. `agentmeter-settings`：本機偏好設定、快取 TTL、開機啟動與右對齊選單。
-    6. `agentmeter-diagnostics`：環境診斷與敏感資訊遮蔽報告。
-    7. `agent-provider-abstraction`：Provider 抽象層解耦。
-    8. `localization`：繁體中文、英文與系統預設之即時多國語言切換，以及 yyyy-MM-dd HH:mm:ss 時間格式。
-    9. `homebrew-distribution`：GitHub Releases + Homebrew Cask 發布與 `--zap`。
-
-- **下一階段規劃範圍**：
-  - 新增 Google Antigravity Provider 與獨立 Dashboard。
-  - 依賴官方 Antigravity CLI 1.1.11+，透過 `agy -p "/usage" --output-format json` 查詢額度。
-  - 僅支援 Google 帳號登入及所有有效 Gemini Models 額度；不納入 Gemini API Key、Claude/GPT 額度或 AI Credits。
-  - Codex 與 Antigravity 使用獨立快照、載入及錯誤狀態，Menu Bar 依 Provider 分組顯示。
+    2. `antigravity-rate-limit-provider`：Antigravity CLI 唯讀 JSON 查詢與 Gemini Models 動態 bucket 解析過濾。
+    3. `usage-dashboard`：Desktop 雙 Provider 額度儀表板、雙列標頭、左側即時 Menu Bar 釘選核取方塊。
+    4. `menu-bar-usage`：Menu Bar 常駐 AM 圖示 Popover、Smart Cache 與依 Provider 分組自適應高度。
+    5. `codex-environment-setup`：CLI PATH 偵測與引導。
+    6. `agentmeter-settings`：本機偏好設定、雙 Provider 自訂 CLI 路徑、快取 TTL、開機啟動與右對齊選單。
+    7. `agentmeter-diagnostics`：環境診斷與敏感資訊遮蔽報告。
+    8. `agent-provider-abstraction`：Provider 抽象層解耦與多 Provider 狀態隔離。
+    9. `localization`：繁體中文、英文與系統預設之即時多國語言切換，以及 yyyy-MM-dd HH:mm:ss 時間格式。
+    10. `homebrew-distribution`：GitHub Releases + Homebrew Cask 發布與 `--zap`。

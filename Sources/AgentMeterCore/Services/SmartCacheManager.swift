@@ -1,27 +1,29 @@
 import Foundation
 
-/// Manages rate limit snapshot caching with time-to-live (TTL) validation.
+/// Manages rate limit snapshot caching with time-to-live (TTL) validation per Provider.
 public final class SmartCacheManager: @unchecked Sendable {
     public static let shared = SmartCacheManager()
 
-    private var cachedSnapshot: RateLimitSnapshot?
+    private var cache: [ProviderType: RateLimitSnapshot] = [:]
     private let lock = NSLock()
 
     public init(initialSnapshot: RateLimitSnapshot? = nil) {
-        self.cachedSnapshot = initialSnapshot
-    }
-
-    /// Stores a new snapshot in the cache.
-    public func store(_ snapshot: RateLimitSnapshot) {
-        lock.withLock {
-            self.cachedSnapshot = snapshot
+        if let initial = initialSnapshot {
+            self.cache[initial.provider] = initial
         }
     }
 
-    /// Returns the cached snapshot if it exists and has not exceeded the given TTL in seconds.
-    public func getFreshSnapshot(ttl: TimeInterval, currentDate: Date = Date()) -> RateLimitSnapshot? {
+    /// Stores a new snapshot in the cache under its provider type.
+    public func store(_ snapshot: RateLimitSnapshot) {
         lock.withLock {
-            guard let snapshot = cachedSnapshot else {
+            self.cache[snapshot.provider] = snapshot
+        }
+    }
+
+    /// Returns the cached snapshot for a specific provider if it exists and has not exceeded TTL.
+    public func getFreshSnapshot(for provider: ProviderType, ttl: TimeInterval, currentDate: Date = Date()) -> RateLimitSnapshot? {
+        lock.withLock {
+            guard let snapshot = cache[provider] else {
                 return nil
             }
             let age = currentDate.timeIntervalSince(snapshot.fetchedAt)
@@ -32,15 +34,32 @@ public final class SmartCacheManager: @unchecked Sendable {
         }
     }
 
-    /// Checks if a cached snapshot exists regardless of expiration.
-    public var currentSnapshot: RateLimitSnapshot? {
-        lock.withLock { cachedSnapshot }
+    /// Legacy helper returning fresh snapshot for Codex (or first found).
+    public func getFreshSnapshot(ttl: TimeInterval, currentDate: Date = Date()) -> RateLimitSnapshot? {
+        return getFreshSnapshot(for: .codex, ttl: ttl, currentDate: currentDate)
     }
 
-    /// Invalidates the cache completely upon refresh failure or user reset.
+    /// Checks if a cached snapshot exists for a specific provider regardless of expiration.
+    public func currentSnapshot(for provider: ProviderType) -> RateLimitSnapshot? {
+        lock.withLock { cache[provider] }
+    }
+
+    /// Legacy helper returning the current snapshot for Codex.
+    public var currentSnapshot: RateLimitSnapshot? {
+        lock.withLock { cache[.codex] }
+    }
+
+    /// Invalidates the cache for a specific provider.
+    public func invalidate(for provider: ProviderType) {
+        lock.withLock {
+            _ = self.cache.removeValue(forKey: provider)
+        }
+    }
+
+    /// Invalidates all cached snapshots.
     public func invalidate() {
         lock.withLock {
-            self.cachedSnapshot = nil
+            self.cache.removeAll()
         }
     }
 }

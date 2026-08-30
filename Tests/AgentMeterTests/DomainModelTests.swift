@@ -48,11 +48,11 @@ struct DomainModelTests {
         #expect(snapshot.item(withId: "non_existent") == nil)
     }
 
-    @Test("ProviderType MVP support filtering")
-    func testProviderTypeMVP() {
-        #expect(ProviderType.codex.isSupportedInMVP == true)
-        #expect(ProviderType.gemini.isSupportedInMVP == false)
-        #expect(ProviderType.antigravity.isSupportedInMVP == false)
+    @Test("ProviderType support filtering")
+    func testProviderTypeSupport() {
+        #expect(ProviderType.codex.isSupported == true)
+        #expect(ProviderType.antigravity.isSupported == true)
+        #expect(ProviderType.gemini.isSupported == false)
     }
 
     @Test("EnvironmentStatus readiness check")

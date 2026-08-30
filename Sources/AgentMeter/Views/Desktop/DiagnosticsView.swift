@@ -1,7 +1,7 @@
 import SwiftUI
 import AgentMeterCore
 
-/// Diagnostics screen displaying system state and sanitized report export.
+/// Diagnostics screen displaying system state and sanitized report export for all providers.
 public struct DiagnosticsView: View {
     @Bindable var viewModel: UsageMonitorViewModel
     @State private var isCopied: Bool = false
@@ -37,40 +37,73 @@ public struct DiagnosticsView: View {
 
                 Divider()
 
+                // System info
                 VStack(spacing: 12) {
                     DiagnosticRow(title: L10n.agentMeterVersion, value: AgentMeterCore.version)
                     DiagnosticRow(title: L10n.macOSVersion, value: ProcessInfo.processInfo.operatingSystemVersionString)
-                    DiagnosticRow(title: L10n.codexCLIPath, value: resolvedCliPath)
-                    DiagnosticRow(title: L10n.environmentStatusText, value: "\(viewModel.environmentStatus)")
-                    DiagnosticRow(
-                        title: L10n.lastRefreshTime,
-                        value: viewModel.lastRefreshTime.map { DateFormatterHelper.formatLastRefreshTime($0) } ?? L10n.never
-                    )
-                    DiagnosticRow(title: L10n.lastErrorText, value: viewModel.lastError ?? L10n.none)
                 }
                 .padding()
                 .background(Color(nsColor: .controlBackgroundColor))
                 .clipShape(RoundedRectangle(cornerRadius: 10))
+
+                // Codex Diagnostics
+                GroupBox(L10n.codexTitle) {
+                    VStack(spacing: 12) {
+                        DiagnosticRow(title: L10n.codexCLIPath, value: resolvedCodexCliPath)
+                        DiagnosticRow(title: L10n.environmentStatusText, value: "\(viewModel.environmentStatuses[.codex] ?? .healthy)")
+                        DiagnosticRow(
+                            title: L10n.lastRefreshTime,
+                            value: viewModel.lastRefreshTimes[.codex].map { DateFormatterHelper.formatLastRefreshTime($0) } ?? L10n.never
+                        )
+                        DiagnosticRow(title: L10n.lastErrorText, value: viewModel.lastErrors[.codex] ?? L10n.none)
+                    }
+                    .padding(10)
+                }
+
+                // Antigravity Diagnostics
+                GroupBox(L10n.antigravityTitle) {
+                    VStack(spacing: 12) {
+                        DiagnosticRow(title: L10n.antigravityCLIPath, value: resolvedAntigravityCliPath)
+                        DiagnosticRow(title: L10n.environmentStatusText, value: "\(viewModel.environmentStatuses[.antigravity] ?? .healthy)")
+                        DiagnosticRow(
+                            title: L10n.lastRefreshTime,
+                            value: viewModel.lastRefreshTimes[.antigravity].map { DateFormatterHelper.formatLastRefreshTime($0) } ?? L10n.never
+                        )
+                        DiagnosticRow(title: L10n.lastErrorText, value: viewModel.lastErrors[.antigravity] ?? L10n.none)
+                    }
+                    .padding(10)
+                }
             }
             .padding(24)
         }
     }
 
-    private var resolvedCliPath: String {
+    private var resolvedCodexCliPath: String {
         let detector = CodexEnvironmentDetector(
             customExecutablePath: viewModel.settingsManager.customCodexPath.isEmpty ? nil : viewModel.settingsManager.customCodexPath
         )
         return detector.resolveExecutablePath() ?? L10n.notFound
     }
 
+    private var resolvedAntigravityCliPath: String {
+        let detector = AntigravityEnvironmentDetector(
+            customExecutablePath: viewModel.settingsManager.customAntigravityPath.isEmpty ? nil : viewModel.settingsManager.customAntigravityPath
+        )
+        return detector.resolveExecutablePath() ?? L10n.notFound
+    }
+
     private func copySanitizedReport() {
-        let report = ReportSanitizer.generateReport(
+        let report = ReportSanitizer.generateMultiProviderReport(
             appVersion: AgentMeterCore.version,
             osVersion: ProcessInfo.processInfo.operatingSystemVersionString,
-            cliPath: resolvedCliPath,
-            environmentStatus: viewModel.environmentStatus,
-            lastRefreshDate: viewModel.lastRefreshTime,
-            lastError: viewModel.lastError
+            codexPath: resolvedCodexCliPath,
+            codexStatus: viewModel.environmentStatuses[.codex] ?? .healthy,
+            codexLastRefresh: viewModel.lastRefreshTimes[.codex],
+            codexLastError: viewModel.lastErrors[.codex],
+            antigravityPath: resolvedAntigravityCliPath,
+            antigravityStatus: viewModel.environmentStatuses[.antigravity] ?? .healthy,
+            antigravityLastRefresh: viewModel.lastRefreshTimes[.antigravity],
+            antigravityLastError: viewModel.lastErrors[.antigravity]
         )
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(report, forType: .string)
