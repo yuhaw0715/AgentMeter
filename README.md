@@ -4,15 +4,16 @@
 [![Platform](https://img.shields.io/badge/platform-macOS%2026%2B%20%7C%2015%2B-lightgrey.svg)](https://apple.com)
 [![Swift](https://img.shields.io/badge/Swift-6.0-orange.svg)](https://swift.org)
 
-**AgentMeter** 是一款專為 macOS 設計的原生、輕量級 AI Coding Agent 使用額度監控器。MVP 版本聚焦於 **ChatGPT Codex**，透過官方 Codex CLI 的 `app-server` JSON-RPC 介面（`account/rateLimits/read`）獲取即時額度快照。
+**AgentMeter** 是一款專為 macOS 設計的原生、輕量級 AI Coding Agent 使用額度監控器。目前支援 **ChatGPT Codex** 與 **Google Antigravity**：分別透過 Codex CLI 的 `app-server` JSON-RPC 介面，以及 Antigravity CLI 的唯讀非互動 JSON 查詢取得即時額度快照。
 
 ---
 
 ## ✨ 核心特色 (Features)
 
 - **macOS 原生體驗**：純 SwiftUI 與 Swift 6 現代併發打造，提供 Desktop 完整儀表板與常駐 Menu Bar Popover。
-- **官方 CLI 整合**：直接透過本地官方 `codex app-server` 的標準 JSON-RPC 2.0 通訊獲取額度，絕不抓取瀏覽器 Cookie、不爬取私有端點。
-- **動態額度解析**：自動識別並動態正規化所有 Provider 額度項目（如 5 小時工作階段、每週額度、新額度類型），具備高容錯性。
+- **雙 Provider 官方 CLI 整合**：Codex 透過本機 `codex app-server` 的標準 JSON-RPC 2.0 通訊；Antigravity 透過 `agy -p "/usage" --output-format json` 唯讀查詢。全程不抓取瀏覽器 Cookie、不直接呼叫私有端點。
+- **動態額度解析**：自動識別並正規化 Codex 的 5 小時／每週額度，以及 Antigravity 的 Gemini Models 動態 quota buckets，無須硬編碼模型清單。
+- **多 Provider 狀態隔離**：各 Provider 的載入、錯誤、快取與 Menu Bar 顯示狀態彼此獨立，單一 CLI 異常不影響其他 Provider。
 - **Smart Cache 智慧快取**：Menu Bar 點擊秒開，具備自訂 TTL（預設 5 分鐘）與過期主動更新機制，不佔用多餘系統資源與電量。
 - **隱私與安全至上**：零雲端同步（無 CloudKit/伺服器後端）、零資料收集（無 Telemetry/Analytics），內建敏感資訊遮蔽的診斷報告匯出工具。
 - **雙語在地化**：完整支援繁體中文（Traditional Chinese）與英文（English），自動遵循系統時區與 12/24 小時制。
@@ -47,11 +48,15 @@ brew install --cask yuhaw0715/tap/agentmeter
 ### 系統需求
 - macOS 15.0+ (Sequoia) / macOS 26+
 - Swift 6.0+ / Xcode 16+
+- Codex CLI（監控 ChatGPT Codex 額度時需要）
+- Antigravity CLI 1.1.11+（監控 Google Antigravity 額度時需要）
 
 ### 執行單元測試
 ```bash
 swift test
 ```
+
+目前共 12 套測試、31 項測試，涵蓋雙 Provider 解析、環境偵測、快取隔離、設定、診斷遮蔽與本機 CLI 整合。
 
 ### 編譯應用程式
 ```bash
@@ -91,7 +96,7 @@ gh release create v0.1.0 \
   --generate-notes
 ```
 
-腳本最後輸出的 SHA-256 必須填入 `homebrew-tap/Casks/agentmeter.rb`，取代暫時的 `sha256 :no_check`，再驗證安裝：
+每次發布時，必須將腳本最後輸出的 SHA-256 同步至 `homebrew-tap/Casks/agentmeter.rb`，並確認 `version`、下載 URL 與 ZIP 檔名一致，再驗證安裝：
 
 ```bash
 brew update
@@ -107,14 +112,15 @@ AgentMeter 採用 Clean Architecture 與 MVVM 分層架構：
 ```
 Sources/
 ├── AgentMeterCore/              # 核心領域、Provider 與業務邏輯庫
-│   ├── Domain/                 # RateLimitItem, Snapshot, ProviderType, AgentProvider 協定
-│   ├── Providers/Codex/        # CodexEnvironmentDetector, CodexProcessManager, CodexRateLimitProvider
-│   ├── Services/               # SmartCacheManager, SettingsManager, ReportSanitizer
-│   ├── ViewModels/             # UsageMonitorViewModel (@Observable)
-│   └── Localization/           # L10n, DateFormatterHelper
+│   ├── Domain/                  # RateLimitItem, Snapshot, ProviderType, AgentProvider 協定
+│   ├── Providers/Codex/         # Codex JSON-RPC、額度解析與環境偵測
+│   ├── Providers/Antigravity/   # agy 唯讀查詢、動態 bucket 解析與版本偵測
+│   ├── Services/                # 多 Provider Smart Cache、設定與診斷遮蔽
+│   ├── ViewModels/              # UsageMonitorViewModel (@Observable)
+│   └── Localization/            # L10n, DateFormatterHelper
 └── AgentMeter/                 # macOS SwiftUI 應用程式 UI
-    ├── App/                    # AgentMeterApp (WindowGroup + MenuBarExtra)
-    └── Views/                  # Desktop Dashboard, MenuBar Popover, Settings, Diagnostics
+    ├── App/                     # AgentMeterApp (Window + MenuBarExtra)
+    └── Views/                   # 雙 Provider Dashboard、Menu Bar、設定與診斷
 ```
 
 ---
