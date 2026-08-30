@@ -2,7 +2,7 @@
 
 ## Purpose
 
-定義透過 GitHub Releases 與既有自訂 Homebrew tap 的發布套件與 Cask Formula，支援安裝、解除安裝與範圍受限的隔離屬性 (quarantine) 處理。
+定義透過 GitHub Releases 與既有獨立 `homebrew-tap` repository 的發布套件與 Cask Formula，支援安裝、解除安裝與範圍受限的隔離屬性 (quarantine) 處理。AgentMeter repository 僅負責產生版本化 ZIP 與 SHA-256；Cask Formula SHALL 只在獨立 `homebrew-tap` repository 維護，AgentMeter repository SHALL NOT 保存重複副本。
 
 ## Requirements
 
@@ -27,6 +27,12 @@
 - **AND** 使用者執行 `brew install --cask <tap>/agentmeter`
 - **THEN** Homebrew SHALL 通過下載檔案的 checksum 驗證
 - **AND** Homebrew 將 `AgentMeter.app` 安裝至 `/Applications`
+
+#### Scenario: Cask 使用單一權威來源
+- **WHEN** 發布者維護或更新 AgentMeter 的 Homebrew Cask
+- **THEN** Cask Formula SHALL 只存在於獨立 `homebrew-tap` repository
+- **AND** AgentMeter repository SHALL NOT 保存或發布 Cask Formula 副本
+- **AND** 發布者 SHALL 將發布腳本輸出的 SHA-256 同步至該權威 Cask
 
 ### Requirement: 範圍受限之隔離屬性處理
 安裝 Formula 或 post-install 腳本 SHALL 僅針對特定的 `AgentMeter.app` 套件清除隔離屬性 (`xattr -d com.apple.quarantine`)，嚴格禁止變更其他應用程式或全域目錄。

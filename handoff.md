@@ -160,8 +160,6 @@ AgentMeter/
 ├── Package.swift              # Swift 6 SPM 配置（AgentMeterCore, AgentMeter, AgentMeterTests）
 ├── scripts/
 │   └── build-release.sh       # App Bundle、簽署、ZIP、checksum 與中間產物清理
-├── Casks/
-│   └── agentmeter.rb          # Homebrew Cask 發布配方
 ├── releases/                  # 本機發布產物（由 .gitignore 排除）
 ├── Resources/                 # 應用程式圖示 (AppIcon.icns, AppIcon.png) 與 Entitlements
 ├── Sources/

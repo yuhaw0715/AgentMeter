@@ -98,6 +98,8 @@ gh release create v0.1.0 \
 
 每次發布時，必須將腳本最後輸出的 SHA-256 同步至 `homebrew-tap/Casks/agentmeter.rb`，並確認 `version`、下載 URL 與 ZIP 檔名一致，再驗證安裝：
 
+> Homebrew Cask 僅由獨立的 [`yuhaw0715/homebrew-tap`](https://github.com/yuhaw0715/homebrew-tap) 專案維護；AgentMeter repository 不保存 Cask 副本，避免版本與 checksum 漂移。
+
 ```bash
 brew update
 brew install --cask yuhaw0715/tap/agentmeter
