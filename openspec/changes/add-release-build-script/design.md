@@ -26,10 +26,10 @@ AgentMeter 使用 Swift Package Manager 的 executable target 與 `.process("Res
 - **決策**：新增具備嚴格模式的 `scripts/build-release.sh`，以 `swift build`、`ditto`、`plutil`、`codesign` 與 `shasum` 完成流程。
 - **理由**：這些工具均為 macOS／Swift 開發環境既有工具，不需加入新的套件依賴。
 
-### 2. 每次重建受控的 `dist` 產物
+### 2. 每次重建受控的 `releases` 產物
 
-- **決策**：腳本只重建專案根目錄下明確的 `releases/AgentMeter.app` 與目前版本的 `releases/AgentMeter-v<版本>.zip`，不刪除其他版本或目錄。
-- **理由**：避免舊 resources 或 executable 混入新版本，同時限制清理範圍。
+- **決策**：腳本只重建專案根目錄下明確的 `releases/AgentMeter.app` 與目前版本的 `releases/AgentMeter-v<版本>.zip`，不刪除其他版本或目錄。ZIP 結構與 checksum 驗證成功後移除中間 `AgentMeter.app`；驗證失敗時保留它供除錯。
+- **理由**：避免舊 resources 或 executable 混入新版本，同時限制清理範圍，並讓成功完成後的 `releases/` 只保留可發布的版本化 ZIP。
 
 ### 3. 動態取得 SwiftPM bin path 與 resource bundle
 
@@ -61,6 +61,7 @@ AgentMeter 使用 Swift Package Manager 的 executable target 與 `.process("Res
 - 以 `unzip -l` 驗證 ZIP 頂層與必要檔案。
 - 解壓至暫存目錄後確認 executable 權限與資源 bundle。
 - 比對腳本輸出的 SHA-256 與 `shasum -a 256 releases/AgentMeter-v<版本>.zip`。
+- 將版本化 ZIP 上傳 GitHub Release、同步 Homebrew Cask checksum 後，執行 `brew install --cask yuhaw0715/tap/agentmeter` 實機安裝驗證。
 
 ## Risks / Trade-offs
 

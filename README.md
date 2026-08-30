@@ -66,10 +66,9 @@ swift build -c release
 ./scripts/build-release.sh
 ```
 
-腳本會執行 Release build、組裝並以 ad-hoc identity 簽署 `AgentMeter.app`、驗證 Bundle 與 ZIP 結構，最後產生：
+腳本會執行 Release build、組裝並以 ad-hoc identity 簽署 `AgentMeter.app`、驗證 Bundle 與 ZIP 結構，成功後移除中間 App Bundle，最後只保留：
 
 ```text
-releases/AgentMeter.app
 releases/AgentMeter-v0.1.0.zip
 ```
 

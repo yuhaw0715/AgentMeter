@@ -8,15 +8,19 @@
 - **THEN** 系統執行 Release build，建立包含 executable、有效 `Info.plist`、App icon 與 SwiftPM resource bundle 的 `releases/AgentMeter.app`
 - **AND** 系統依 `CFBundleShortVersionString` 產生頂層為 `AgentMeter.app` 的 `releases/AgentMeter-v<版本>.zip`
 - **AND** 系統輸出該 ZIP 的 SHA-256，供 Homebrew Cask 驗證下載內容
+- **AND** ZIP 結構與 checksum 驗證成功後，系統移除中間 `releases/AgentMeter.app`，最終只保留版本化 ZIP
 
 #### Scenario: 發布產物缺少必要內容
 - **WHEN** executable、`Info.plist`、App icon、entitlements 或 SwiftPM resource bundle 任一缺失或無法驗證
 - **THEN** 發布建置 SHALL 以非零狀態中止
 - **AND** SHALL NOT 將不完整產物視為可發布 ZIP
+- **AND** 若中間 `AgentMeter.app` 已建立，SHALL 保留供發布者診斷
 
 #### Scenario: 透過自訂 Tap 進行單行指令安裝
-- **WHEN** 使用者執行 `brew install --cask <tap>/agentmeter`
-- **THEN** Homebrew 下載應用程式壓縮檔並將 `AgentMeter.app` 安裝至 `/Applications`
+- **WHEN** GitHub Release 的版本化 ZIP 與 Cask 的 `version`、下載 URL 及 SHA-256 一致
+- **AND** 使用者執行 `brew install --cask <tap>/agentmeter`
+- **THEN** Homebrew SHALL 通過下載檔案的 checksum 驗證
+- **AND** Homebrew 將 `AgentMeter.app` 安裝至 `/Applications`
 
 ### Requirement: 發布產物簽署驗證
 發布建置流程 SHALL 在壓縮前簽署並驗證 `AgentMeter.app`；預設允許 ad-hoc identity，並可由發布者顯式指定本機 Keychain 中的 Developer ID identity。

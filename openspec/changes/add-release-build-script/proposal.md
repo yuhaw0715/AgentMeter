@@ -30,7 +30,7 @@ AgentMeter 目前以 Swift Package Manager 建置，但 `swift build -c release`
 
 - **新增檔案**：`scripts/build-release.sh`。
 - **文件**：更新 `README.md` 的發布說明。
-- **建置輸出**：新增未納入版控的 `releases/AgentMeter.app` 與 `releases/AgentMeter-v<版本>.zip`。
+- **建置輸出**：建置期間建立未納入版控的 `releases/AgentMeter.app`，驗證成功後移除中間 App Bundle，最終只保留 `releases/AgentMeter-v<版本>.zip`。
 - **本機工具**：依賴 macOS 內建的 `codesign`、`ditto`、`plutil`、`shasum` 與 Swift toolchain。
 - **安全性**：預設 ad-hoc 簽署不等同 Apple notarization；腳本不讀取或保存簽署憑證密碼。
 

@@ -27,7 +27,7 @@
    - 若使用者明確要求執行 commit 或 push，方可代為執行相應指令。
 
 3. **Git 忽略規則**：
-   - 專案已建立 [`.gitignore`](.gitignore)，涵蓋作業系統隱藏檔（如 `.DS_Store`）、敏感資訊（`.env`、私鑰）、相依套件（`node_modules/`、`venv/`）以及常見編輯器暫存檔。
+   - 專案已建立 [`.gitignore`](.gitignore)，涵蓋作業系統隱藏檔（如 `.DS_Store`）、敏感資訊（`.env`、私鑰）、相依套件（`node_modules/`、`venv/`）、發布產物（`releases/`）以及常見編輯器暫存檔。
 
 ---
 
@@ -47,7 +47,8 @@
 ## 4. 目前專案規格與進度 (Current Specs & Status)
 
 - **已歸檔變更**：`agentmeter-mvp`（位於 [`openspec/changes/archive/2026-08-29-agentmeter-mvp/`](openspec/changes/archive/2026-08-29-agentmeter-mvp/)）、`add-antigravity-usage`（位於 [`openspec/changes/archive/2026-08-30-add-antigravity-usage/`](openspec/changes/archive/2026-08-30-add-antigravity-usage/)）
-- **目前階段**：ChatGPT Codex 與 Google Antigravity 雙 Provider 額度監控已全數實作完成，12 大測試套件共 31 項測試 100% 通過。
+- **目前變更**：`add-release-build-script`（位於 [`openspec/changes/add-release-build-script/`](openspec/changes/add-release-build-script/)），所有 Proposal、Design、Spec 與 Tasks 已完成並通過 OpenSpec strict validation，待歸檔。
+- **目前階段**：ChatGPT Codex 與 Google Antigravity 雙 Provider 額度監控、版本化 GitHub Release ZIP 建置流程及 Homebrew Cask 實機安裝均已完成；12 大測試套件共 31 項測試 100% 通過。
 - **支援範圍**：
   - 核心平台：macOS 26+ SwiftUI 原生應用程式（Desktop 視窗 + Menu Bar 圖示 Popover）。
   - 視覺設計：Menu Bar 採用 Concept 2（極簡粗體 AM Monogram），App 圖示採用 Option B4（深炭灰去背 Squircle 滿版圖示）。
@@ -64,4 +65,4 @@
     7. `agentmeter-diagnostics`：環境診斷與敏感資訊遮蔽報告。
     8. `agent-provider-abstraction`：Provider 抽象層解耦與多 Provider 狀態隔離。
     9. `localization`：繁體中文、英文與系統預設之即時多國語言切換，以及 yyyy-MM-dd HH:mm:ss 時間格式。
-    10. `homebrew-distribution`：GitHub Releases + Homebrew Cask 發布與 `--zap`。
+    10. `homebrew-distribution`：以 `scripts/build-release.sh` 建立、ad-hoc／Developer ID 簽署及驗證 `releases/AgentMeter-v<版本>.zip`，成功後自動移除中間 App Bundle；支援 GitHub Releases、Homebrew Cask 安裝、checksum 驗證與 `--zap`。

@@ -7,7 +7,7 @@ cask "agentmeter" do
   desc "Lightweight, native macOS rate-limit monitor for AI Coding Agents (ChatGPT Codex)"
   homepage "https://github.com/yuhaw0715/AgentMeter"
 
-  depends_on macos: ">= :sequoia"
+  depends_on macos: :sequoia
 
   app "AgentMeter.app"
 

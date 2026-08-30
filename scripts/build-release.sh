@@ -116,8 +116,11 @@ printf '%s\n' "${archive_entries}" | grep -F "AgentMeter.app/Contents/Resources/
 archive_sha256="$(shasum -a 256 "${ARCHIVE_PATH}" | awk '{print $1}')"
 archive_size="$(du -h "${ARCHIVE_PATH}" | awk '{print $1}')"
 
+log "ZIP 驗證完成，移除中間 App Bundle"
+rm -rf "${APP_BUNDLE}"
+[[ ! -e "${APP_BUNDLE}" ]] || fail "無法移除中間 App Bundle：${APP_BUNDLE}"
+
 log "發布產物建立完成"
-printf 'App:     %s\n' "${APP_BUNDLE}"
 printf 'ZIP:     %s (%s)\n' "${ARCHIVE_PATH}" "${archive_size}"
 printf 'Version: %s (%s)\n' "${bundle_version}" "${bundle_build}"
 printf 'SHA-256: %s\n' "${archive_sha256}"
