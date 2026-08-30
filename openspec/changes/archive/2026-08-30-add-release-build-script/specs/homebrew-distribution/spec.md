@@ -22,6 +22,8 @@
 - **THEN** Homebrew SHALL 通過下載檔案的 checksum 驗證
 - **AND** Homebrew 將 `AgentMeter.app` 安裝至 `/Applications`
 
+## ADDED Requirements
+
 ### Requirement: 發布產物簽署驗證
 發布建置流程 SHALL 在壓縮前簽署並驗證 `AgentMeter.app`；預設允許 ad-hoc identity，並可由發布者顯式指定本機 Keychain 中的 Developer ID identity。
 

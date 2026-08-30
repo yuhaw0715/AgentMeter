@@ -11,7 +11,9 @@
 - **遠端倉庫**：`https://github.com/yuhaw0715/AgentMeter.git`（主要分支：`main`）
 - **目前進度**：
   - `agentmeter-mvp`（ChatGPT Codex 支援）已 100% 實作完成並歸檔。
-  - `add-antigravity-usage`（Google Antigravity Gemini 支援）已 100% 實作完成，12 大測試套件共 31 項測試全數通過。
+  - `add-antigravity-usage`（Google Antigravity Gemini 支援）已 100% 實作完成並歸檔，12 大測試套件共 31 項測試全數通過。
+  - `add-release-build-script`（macOS App Bundle、GitHub Release ZIP 與 Homebrew 發布流程）已 100% 實作、完成實機安裝驗證並歸檔。
+  - GitHub Release `v0.1.0` 的 `AgentMeter-v0.1.0.zip` 已可由 `yuhaw0715/tap/agentmeter` 正確下載、通過 checksum 並安裝。
 
 ---
 
@@ -82,11 +84,59 @@ graph TD
 
 - **單元與整合測試 (`swift test`)**：**12 大測試套件共 31 項測試 100% 通過**（包含與本機真實 `codex app-server` 及 `agy /usage` 的實測抓取連線）。
 - **正式發布編譯 (`swift build -c release`)**：0 警告、0 錯誤。
-- **Homebrew Cask**：已備妥 `Casks/agentmeter.rb` 支援 `--zap` 清理路徑。
+- **發布腳本 (`scripts/build-release.sh`)**：已通過 Shell 語法、App Bundle 結構、`plutil`、`codesign --verify --deep --strict`、ZIP 頂層結構與 SHA-256 驗證。
+- **發布產物**：`releases/AgentMeter-v0.1.0.zip`（Apple Silicon `arm64`，約 3.8 MB），SHA-256 為 `3e6d91bde7f4167ca5571e39efa462dbd6d2a1c65cd50e1c02eb63b0a5eadbe2`。
+- **Homebrew Cask**：已由 `brew install --cask yuhaw0715/tap/agentmeter` 完成實機安裝；支援範圍受限 quarantine 清理與 `--zap`。
+- **OpenSpec**：`add-release-build-script` 已同步至主規格並歸檔為 `openspec/changes/archive/2026-08-30-add-release-build-script/`；歸檔後 strict validation 通過。
 
 ---
 
-## 📜 4. 協作規範與規則 (Collaboration Guidelines)
+## 📦 4. 發布流程與儲存庫狀態 (Release Workflow & Repository Status)
+
+### AgentMeter 發布產物
+
+執行：
+
+```bash
+./scripts/build-release.sh
+```
+
+腳本會：
+
+1. 以 SwiftPM Release 組態建置 AgentMeter。
+2. 建立完整 `AgentMeter.app`，複製 Info.plist、AppIcon 與 SwiftPM resource bundle。
+3. 預設以 ad-hoc identity 簽署；亦可透過 `CODESIGN_IDENTITY` 指定 Developer ID。
+4. 驗證 App Bundle 與簽署後，產生 `releases/AgentMeter-v<版本>.zip`。
+5. 驗證 ZIP 結構並輸出 SHA-256。
+6. 全部成功後自動移除中間 `releases/AgentMeter.app`；失敗時保留供除錯。
+
+`releases/` 已由 `.gitignore` 排除，發布二進位不納入 Git。
+
+### GitHub Release 與 Homebrew Tap
+
+- AgentMeter repository：`https://github.com/yuhaw0715/AgentMeter.git`
+- Homebrew tap repository：`https://github.com/yuhaw0715/homebrew-tap.git`
+- Release asset 命名：`AgentMeter-v#{version}.zip`
+- Cask token／檔名：`agentmeter`／`Casks/agentmeter.rb`
+- 安裝指令：`brew install --cask yuhaw0715/tap/agentmeter`
+- Cask macOS 相依語法：`depends_on macos: :sequoia`
+
+重要 commits：
+
+- AgentMeter `3d9bff4`：新增 Homebrew 發布產物建置流程。
+- AgentMeter `ab5c4f7`：完善發布產物清理、驗證、OpenSpec 與 AGENTS 狀態。
+- homebrew-tap `69a2258`：新增 AgentMeter Homebrew Cask。
+- homebrew-tap `8bbebcd`：更新 AgentMeter 發布套件 checksum。
+- homebrew-tap `e50ec0f`：更新 macOS 相依語法。
+
+### 下一步
+
+1. 依使用者審閱結果提交本次 OpenSpec 歸檔與文件狀態更新；未經明確指示不得 commit／push。
+2. 未來每次發布前更新 `Resources/Info.plist` 版本、重跑發布腳本、上傳確切 ZIP，並以該 ZIP 的 SHA-256 更新 tap。
+
+---
+
+## 📜 5. 協作規範與規則 (Collaboration Guidelines)
 
 新對話中的 Agent **必須嚴格遵守以下規範**：
 1. **Git 規範**：
@@ -101,15 +151,18 @@ graph TD
 
 ---
 
-## 🧭 5. 專案目錄結構 (Project Structure)
+## 🧭 6. 專案目錄結構 (Project Structure)
 
 ```text
 AgentMeter/
 ├── AGENTS.md                  # Agent 協作規範與目前專案進度
 ├── handoff.md                 # 本交接文件
 ├── Package.swift              # Swift 6 SPM 配置（AgentMeterCore, AgentMeter, AgentMeterTests）
+├── scripts/
+│   └── build-release.sh       # App Bundle、簽署、ZIP、checksum 與中間產物清理
 ├── Casks/
 │   └── agentmeter.rb          # Homebrew Cask 發布配方
+├── releases/                  # 本機發布產物（由 .gitignore 排除）
 ├── Resources/                 # 應用程式圖示 (AppIcon.icns, AppIcon.png) 與 Entitlements
 ├── Sources/
 │   ├── AgentMeterCore/        # 核心商業邏輯（Domain, Providers, Services, ViewModels, Localization）
@@ -119,5 +172,19 @@ AgentMeter/
 └── openspec/                  # OpenSpec 規格資料夾
     ├── specs/                 # 已生效的主規格
     └── changes/
-        └── archive/           # 已歸檔歷史變更 (agentmeter-mvp, add-antigravity-usage)
+        └── archive/           # 已歸檔歷史變更（含 add-release-build-script）
+```
+
+---
+
+## 🤝 7. 新對話交接 Prompt
+
+```text
+請接手 /Users/yuhao/Projects/AgentMeter 專案，先完整閱讀 AGENTS.md 與 handoff.md，並嚴格遵守其中規範。
+
+目前 ChatGPT Codex 與 Google Antigravity 雙 Provider 額度監控均已完成，12 套測試共 31 項測試全數通過。macOS 發布流程 `add-release-build-script` 亦已完成：`scripts/build-release.sh` 會建立、簽署及驗證 App Bundle，輸出版本化的 `releases/AgentMeter-v<版本>.zip`，計算 SHA-256，並在成功後移除中間 AgentMeter.app。GitHub Release v0.1.0 與 Homebrew Cask `yuhaw0715/tap/agentmeter` 已完成實機安裝驗證。
+
+請先檢查兩個 repository 的 git status 與最近 commits，不要修改或覆蓋任何使用者既有變更。`add-release-build-script` 已同步至主規格並歸檔於 `openspec/changes/archive/2026-08-30-add-release-build-script/`。若需要進行其他複雜變更，先依 OpenSpec 流程提出繁體中文 Proposal／Design／Tasks 並等待核准。
+
+未經我明確指示，不得執行 git commit 或 git push；所有 commit 訊息、OpenSpec 文件、實作計畫與結案文件均使用繁體中文。
 ```
