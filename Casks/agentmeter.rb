@@ -2,7 +2,7 @@ cask "agentmeter" do
   version "0.1.0"
   sha256 :no_check
 
-  url "https://github.com/yuhaw0715/AgentMeter/releases/download/v#{version}/AgentMeter.zip"
+  url "https://github.com/yuhaw0715/AgentMeter/releases/download/v#{version}/AgentMeter-v#{version}.zip"
   name "AgentMeter"
   desc "Lightweight, native macOS rate-limit monitor for AI Coding Agents (ChatGPT Codex)"
   homepage "https://github.com/yuhaw0715/AgentMeter"

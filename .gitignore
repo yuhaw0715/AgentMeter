@@ -52,6 +52,7 @@ DerivedData/
 # Node.js / JavaScript / TypeScript
 node_modules/
 dist/
+releases/
 build/
 .next/
 .nuxt/

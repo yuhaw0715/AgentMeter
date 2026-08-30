@@ -58,6 +58,47 @@ swift test
 swift build -c release
 ```
 
+### 建立 GitHub Release 發布產物
+
+`swift build` 只會產生 executable。若要建立 Homebrew Cask 可安裝的完整 App Bundle 與 ZIP，請執行：
+
+```bash
+./scripts/build-release.sh
+```
+
+腳本會執行 Release build、組裝並以 ad-hoc identity 簽署 `AgentMeter.app`、驗證 Bundle 與 ZIP 結構，最後產生：
+
+```text
+releases/AgentMeter.app
+releases/AgentMeter-v0.1.0.zip
+```
+
+如需使用本機 Keychain 中的 Developer ID Application identity，可指定：
+
+```bash
+CODESIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)" \
+  ./scripts/build-release.sh
+```
+
+> Developer ID 簽署不等同 Apple notarization；目前腳本不執行 notarize 或 staple。
+
+建立與 `Resources/Info.plist` 版本一致的 Git tag 後，可將 ZIP 上傳至 GitHub Release：
+
+```bash
+gh release create v0.1.0 \
+  releases/AgentMeter-v0.1.0.zip \
+  --verify-tag \
+  --title "AgentMeter 0.1.0" \
+  --generate-notes
+```
+
+腳本最後輸出的 SHA-256 必須填入 `homebrew-tap/Casks/agentmeter.rb`，取代暫時的 `sha256 :no_check`，再驗證安裝：
+
+```bash
+brew update
+brew install --cask yuhaw0715/tap/agentmeter
+```
+
 ---
 
 ## 🏗️ 架構分層 (Architecture)

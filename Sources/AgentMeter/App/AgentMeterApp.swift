@@ -30,11 +30,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func setApplicationIcon() {
-        if let iconUrl = Bundle.module.url(forResource: "AppIcon", withExtension: "png"),
+        let iconUrl = Bundle.main.url(forResource: "AppIcon", withExtension: "icns")
+            ?? Bundle.module.url(forResource: "AppIcon", withExtension: "png")
+
+        if let iconUrl,
            let iconImage = NSImage(contentsOf: iconUrl) {
             NSApplication.shared.applicationIconImage = iconImage
-        } else if let fallbackImage = NSImage(contentsOfFile: "Resources/AppIcon.png") {
-            NSApplication.shared.applicationIconImage = fallbackImage
         }
     }
 }
