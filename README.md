@@ -10,7 +10,7 @@
 
 ## ✨ 核心特色 (Features)
 
-- **macOS 原生體驗**：純 SwiftUI 與 Swift 6 現代併發打造，提供 Desktop 完整儀表板與常駐 Menu Bar Popover。
+- **macOS 原生體驗**：純 SwiftUI 與 Swift 6 現代併發打造，提供 Desktop 完整儀表板與常駐 Menu Bar Popover；關閉主視窗時自動隱藏 Dock 圖示並維持背景常駐，支援快捷鍵 `Cmd-W` 收起與 `Cmd-Q` 退出。
 - **雙 Provider 官方 CLI 整合**：Codex 透過本機 `codex app-server` 的標準 JSON-RPC 2.0 通訊；Antigravity 透過 `agy -p "/usage" --output-format json` 唯讀查詢。全程不抓取瀏覽器 Cookie、不直接呼叫私有端點。
 - **動態額度解析**：自動識別並正規化 Codex 的 5 小時／每週額度，以及 Antigravity 的 Gemini Models 動態 quota buckets，無須硬編碼模型清單。
 - **多 Provider 狀態隔離**：各 Provider 的載入、錯誤、快取與 Menu Bar 顯示狀態彼此獨立，單一 CLI 異常不影響其他 Provider。
