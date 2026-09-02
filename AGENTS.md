@@ -59,7 +59,7 @@
     1. `codex-rate-limit-provider`：Codex app-server JSON-RPC 握手與 5h / Weekly 動態額度解析。
     2. `antigravity-rate-limit-provider`：Antigravity CLI 唯讀 JSON 查詢與 Gemini Models 動態 bucket 解析過濾。
     3. `usage-dashboard`：Desktop 雙 Provider 額度儀表板、雙列標頭、左側即時 Menu Bar 釘選核取方塊。
-    4. `menu-bar-usage`：Menu Bar 常駐 AM 圖示 Popover、Smart Cache 與依 Provider 分組自適應高度。
+    4. `menu-bar-usage`：Menu Bar 常駐 AM 圖示 Popover、Smart Cache、依 Provider 分組自適應高度與純選單列常駐（Stats 模式，全程無 Dock 圖示、啟動靜默、Spotlight Reopen 喚起主視窗、專屬 Quit 控制項）。
     5. `codex-environment-setup`：CLI PATH 偵測與引導。
     6. `agentmeter-settings`：本機偏好設定、雙 Provider 自訂 CLI 路徑、快取 TTL、開機啟動與右對齊選單。
     7. `agentmeter-diagnostics`：環境診斷與敏感資訊遮蔽報告。

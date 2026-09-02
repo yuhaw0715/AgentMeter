@@ -10,7 +10,7 @@
 
 ## ✨ 核心特色 (Features)
 
-- **macOS 原生體驗**：純 SwiftUI 與 Swift 6 現代併發打造，提供 Desktop 完整儀表板與常駐 Menu Bar Popover；關閉主視窗時自動隱藏 Dock 圖示並維持背景常駐，支援快捷鍵 `Cmd-W` 收起與 `Cmd-Q` 退出。
+- **極簡純選單列常駐（Stats 模式）**：純 SwiftUI 與 Swift 6 現代併發打造，預設以 macOS Accessory 輔助模式靜默常駐於 Menu Bar（右上角 AM 圖示）；全程不佔用 Dock 圖示、不干擾 Cmd+Tab 工作流程、杜絕誤關。需要時可隨時從 Menu Bar Popover 或 Spotlight/Launchpad 喚起完整桌面主視窗。
 - **雙 Provider 官方 CLI 整合**：Codex 透過本機 `codex app-server` 的標準 JSON-RPC 2.0 通訊；Antigravity 透過 `agy -p "/usage" --output-format json` 唯讀查詢。全程不抓取瀏覽器 Cookie、不直接呼叫私有端點。
 - **動態額度解析**：自動識別並正規化 Codex 的 5 小時／每週額度，以及 Antigravity 的 Gemini Models 動態 quota buckets，無須硬編碼模型清單。
 - **多 Provider 狀態隔離**：各 Provider 的載入、錯誤、快取與 Menu Bar 顯示狀態彼此獨立，單一 CLI 異常不影響其他 Provider。
@@ -56,7 +56,7 @@ brew install --cask yuhaw0715/tap/agentmeter
 swift test
 ```
 
-目前共 13 套測試、32 項測試，涵蓋雙 Provider 解析、環境偵測、快取隔離、設定、診斷遮蔽、App 生命週期與本機 CLI 整合。
+目前共 13 套測試、34 項測試，涵蓋雙 Provider 解析、環境偵測、快取隔離、設定、診斷遮蔽、App 生命週期與本機 CLI 整合。
 
 ### 編譯應用程式
 ```bash
