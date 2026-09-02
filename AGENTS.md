@@ -46,9 +46,9 @@
 
 ## 4. 目前專案規格與進度 (Current Specs & Status)
 
-- **已歸檔變更**：`agentmeter-mvp`（位於 [`openspec/changes/archive/2026-08-29-agentmeter-mvp/`](openspec/changes/archive/2026-08-29-agentmeter-mvp/)）、`add-antigravity-usage`（位於 [`openspec/changes/archive/2026-08-30-add-antigravity-usage/`](openspec/changes/archive/2026-08-30-add-antigravity-usage/)）、`add-release-build-script`（位於 [`openspec/changes/archive/2026-08-30-add-release-build-script/`](openspec/changes/archive/2026-08-30-add-release-build-script/)）、`keep-menu-bar-running-after-window-close`（位於 [`openspec/changes/archive/2026-08-30-keep-menu-bar-running-after-window-close/`](openspec/changes/archive/2026-08-30-keep-menu-bar-running-after-window-close/)）
+- **已歸檔變更**：`agentmeter-mvp`（位於 [`openspec/changes/archive/2026-08-29-agentmeter-mvp/`](openspec/changes/archive/2026-08-29-agentmeter-mvp/)）、`add-antigravity-usage`（位於 [`openspec/changes/archive/2026-08-30-add-antigravity-usage/`](openspec/changes/archive/2026-08-30-add-antigravity-usage/)）、`add-release-build-script`（位於 [`openspec/changes/archive/2026-08-30-add-release-build-script/`](openspec/changes/archive/2026-08-30-add-release-build-script/)）、`keep-menu-bar-running-after-window-close`（位於 [`openspec/changes/archive/2026-08-30-keep-menu-bar-running-after-window-close/`](openspec/changes/archive/2026-08-30-keep-menu-bar-running-after-window-close/)）、`pure-menu-bar-mode`（位於 [`openspec/changes/archive/2026-09-02-pure-menu-bar-mode/`](openspec/changes/archive/2026-09-02-pure-menu-bar-mode/)）
 - **目前變更**：無；現有 OpenSpec changes 均已完成並歸檔。
-- **目前階段**：ChatGPT Codex 與 Google Antigravity 雙 Provider 額度監控、主視窗關閉後保持 Menu Bar 常駐與 Dock 隱藏生命週期機制、版本化 GitHub Release ZIP 建置流程及 Homebrew Cask 實機安裝均已完成；4 項變更已同步至主規格並完成歸檔，10 份主規格均通過 OpenSpec strict validation；13 大測試套件共 32 項測試 100% 通過。
+- **目前階段**：ChatGPT Codex 與 Google Antigravity 雙 Provider 額度監控、純選單列常駐（Stats 模式，全程無 Dock 圖示、啟動靜默、Spotlight Reopen 喚起主視窗、專屬 Quit 控制項）、版本化 GitHub Release ZIP 建置流程及 Homebrew Cask 實機安裝均已完成；5 項變更已同步至主規格並完成歸檔，10 份主規格均通過 OpenSpec strict validation；13 大測試套件共 34 項測試 100% 通過。
 - **支援範圍**：
   - 核心平台：macOS 26+ SwiftUI 原生應用程式（Desktop 視窗 + Menu Bar 圖示 Popover）。
   - 視覺設計：Menu Bar 採用 Concept 2（極簡粗體 AM Monogram），App 圖示採用 Option B4（深炭灰去背 Squircle 滿版圖示）。

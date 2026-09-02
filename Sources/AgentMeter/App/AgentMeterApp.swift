@@ -6,8 +6,9 @@ import AgentMeterCore
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
-        NSApplication.shared.setActivationPolicy(.regular)
+        NSApplication.shared.setActivationPolicy(.accessory)
         setApplicationIcon()
+        hideInitialDesktopWindows()
     }
 
     /// Keep the Menu Bar Extra alive when the last desktop window is closed.
@@ -20,19 +21,29 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         NSApplication.shared.activate(ignoringOtherApps: true)
-        if !flag {
-            for window in sender.windows where isStandardContentWindow(window) {
-                window.deminiaturize(nil)
-                window.setIsVisible(true)
-                window.makeKeyAndOrderFront(nil)
-                window.orderFrontRegardless()
-                return true
-            }
+        for window in sender.windows where isStandardContentWindow(window) {
+            window.deminiaturize(nil)
+            window.setIsVisible(true)
+            window.makeKeyAndOrderFront(nil)
+            window.orderFrontRegardless()
+            return true
         }
         return true
     }
 
-    private func isStandardContentWindow(_ window: NSWindow) -> Bool {
+    private func hideInitialDesktopWindows() {
+        for window in NSApplication.shared.windows where isStandardContentWindow(window) {
+            window.orderOut(nil)
+        }
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            for window in NSApplication.shared.windows where self.isStandardContentWindow(window) {
+                window.orderOut(nil)
+            }
+        }
+    }
+
+    func isStandardContentWindow(_ window: NSWindow) -> Bool {
         let name = String(describing: type(of: window))
         return !name.contains("StatusBar") && !name.contains("MenuBar") && !name.contains("Popover") && window.canBecomeMain
     }
@@ -78,7 +89,6 @@ struct AgentMeterApp: App {
     }
 
     private func openMainWindow() {
-        NSApplication.shared.setActivationPolicy(.regular)
         NSApplication.shared.activate(ignoringOtherApps: true)
 
         let existingWindow = NSApplication.shared.windows.first { window in
