@@ -25,8 +25,8 @@ public struct RateLimitCardView: View {
                         .font(.caption2.weight(.bold))
                         .padding(.horizontal, 6)
                         .padding(.vertical, 2)
-                        .background(Color.red.opacity(0.15))
-                        .foregroundStyle(Color.red)
+                        .background(AgentMeterTheme.destructive.opacity(0.14))
+                        .foregroundStyle(AgentMeterTheme.destructive)
                         .clipShape(Capsule())
                 }
 
@@ -39,7 +39,7 @@ public struct RateLimitCardView: View {
             GeometryReader { geometry in
                 ZStack(alignment: .leading) {
                     Capsule()
-                        .fill(Color.secondary.opacity(0.2))
+                        .fill(AgentMeterTheme.track.opacity(0.55))
                         .frame(height: isCompact ? 5 : 8)
 
                     Capsule()
@@ -55,37 +55,41 @@ public struct RateLimitCardView: View {
             HStack {
                 Text(L10n.remainingText(item.remainingPercentageInt))
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(AgentMeterTheme.secondaryText)
 
                 Spacer()
 
                 if let resetAt = item.resetAt {
                     Text(L10n.resetsText(formatResetDate(resetAt)))
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(AgentMeterTheme.secondaryText)
                 } else {
                     Text(L10n.resetTimeUnavailable)
                         .font(.caption)
-                        .foregroundStyle(.secondary.opacity(0.8))
+                        .foregroundStyle(AgentMeterTheme.secondaryText.opacity(0.8))
                 }
             }
         }
         .padding(.horizontal, isCompact ? 12 : 16)
         .padding(.vertical, isCompact ? 8 : 12)
         .background(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(Color(nsColor: .controlBackgroundColor))
-                .shadow(color: Color.black.opacity(0.04), radius: 2, x: 0, y: 1)
+            RoundedRectangle(cornerRadius: AgentMeterTheme.cornerRadius, style: .continuous)
+                .fill(AgentMeterTheme.contentBackground)
+                .shadow(color: Color.black.opacity(0.08), radius: isCompact ? 2 : 6, x: 0, y: 2)
         )
+        .overlay {
+            RoundedRectangle(cornerRadius: AgentMeterTheme.cornerRadius, style: .continuous)
+                .stroke(AgentMeterTheme.divider.opacity(0.8), lineWidth: 0.6)
+        }
     }
 
     private var progressColor: Color {
         if item.usedPercentage >= 90.0 {
-            return .red
+            return AgentMeterTheme.destructive
         } else if item.usedPercentage >= 70.0 {
-            return .orange
+            return AgentMeterTheme.warning
         } else {
-            return .accentColor
+            return AgentMeterTheme.accent
         }
     }
 

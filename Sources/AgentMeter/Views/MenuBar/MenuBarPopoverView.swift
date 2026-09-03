@@ -24,17 +24,16 @@ public struct MenuBarPopoverView: View {
         VStack(spacing: 0) {
             // Header with AM Monogram badge
             HStack {
-                HStack(spacing: 7) {
-                    Text("AM")
-                        .font(.system(size: 10, weight: .black, design: .rounded))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 4)
-                        .padding(.vertical, 2)
-                        .background(Color.accentColor)
-                        .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+                HStack(spacing: 9) {
+                    AgentMeterBrandMark(size: 29)
 
-                    Text(L10n.appName)
-                        .font(.headline)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(L10n.appName)
+                            .font(.headline.weight(.semibold))
+                        Text(L10n.isTraditionalChinese ? "額度速覽" : "Usage at a glance")
+                            .font(.caption2)
+                            .foregroundStyle(AgentMeterTheme.secondaryText)
+                    }
                 }
 
                 Spacer()
@@ -65,7 +64,7 @@ public struct MenuBarPopoverView: View {
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
-            .background(Color(nsColor: .windowBackgroundColor))
+            .background(AgentMeterTheme.glassMaterial)
 
             Divider()
 
@@ -86,28 +85,39 @@ public struct MenuBarPopoverView: View {
 
             // Footer
             HStack {
-                Button(L10n.openMainWindow) {
+                Button {
                     onOpenMainWindow()
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "macwindow")
+                        Text(L10n.openMainWindow)
+                    }
                 }
                 .buttonStyle(.plain)
                 .font(.subheadline.weight(.medium))
-                .foregroundStyle(Color.accentColor)
+                .foregroundStyle(AgentMeterTheme.accent)
 
                 Spacer()
 
-                Button(L10n.quit) {
+                Button {
                     NSApplication.shared.terminate(nil)
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "power")
+                        Text(L10n.quit)
+                    }
                 }
                 .buttonStyle(.plain)
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(AgentMeterTheme.secondaryText)
                 .keyboardShortcut("q", modifiers: .command)
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
-            .background(Color(nsColor: .windowBackgroundColor))
+            .background(AgentMeterTheme.glassMaterial)
         }
         .frame(width: 350)
+        .background(AgentMeterTheme.glassMaterial)
         .task {
             await viewModel.refreshMenuBar(force: false)
         }
@@ -122,16 +132,24 @@ public struct MenuBarPopoverView: View {
         VStack(alignment: .leading, spacing: 8) {
             // Section Header
             HStack {
+                Image(systemName: provider == .codex ? "terminal" : "sparkles")
+                    .foregroundStyle(AgentMeterTheme.accent)
+                    .font(.caption.weight(.semibold))
+
                 Text(provider.displayName)
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(.secondary)
-                    .textCase(.uppercase)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(AgentMeterTheme.primaryText)
 
                 Spacer()
 
                 if isRefreshing {
                     ProgressView()
                         .controlSize(.mini)
+                } else if error == nil {
+                    AgentMeterStatusPill(
+                        title: L10n.isTraditionalChinese ? "已連線" : "Connected",
+                        tint: AgentMeterTheme.success
+                    )
                 }
             }
 
@@ -140,14 +158,14 @@ public struct MenuBarPopoverView: View {
                 VStack(spacing: 8) {
                     HStack(spacing: 6) {
                         Image(systemName: "exclamationmark.triangle.fill")
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(AgentMeterTheme.warning)
                             .font(.caption)
                         Text(L10n.refreshError)
                             .font(.caption.weight(.semibold))
                     }
                     Text(error)
                         .font(.caption2)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(AgentMeterTheme.secondaryText)
                         .multilineTextAlignment(.center)
 
                     Button(L10n.retry) {
@@ -160,8 +178,11 @@ public struct MenuBarPopoverView: View {
                 }
                 .frame(maxWidth: .infinity)
                 .padding(10)
-                .background(Color.orange.opacity(0.08))
-                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .background(AgentMeterTheme.warning.opacity(0.10), in: RoundedRectangle(cornerRadius: AgentMeterTheme.cornerRadius, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: AgentMeterTheme.cornerRadius, style: .continuous)
+                        .stroke(AgentMeterTheme.warning.opacity(0.25), lineWidth: 0.7)
+                }
             } else if !items.isEmpty {
                 VStack(spacing: 8) {
                     ForEach(items) { item in
@@ -174,14 +195,14 @@ public struct MenuBarPopoverView: View {
                         .controlSize(.small)
                     Text(provider == .codex ? L10n.fetchingCodexQuota : L10n.fetchingAntigravityQuota)
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(AgentMeterTheme.secondaryText)
                 }
                 .frame(maxWidth: .infinity, alignment: .center)
                 .padding(.vertical, 8)
             } else {
                 Text(L10n.noQuotaDataYet)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(AgentMeterTheme.secondaryText)
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.vertical, 8)
             }

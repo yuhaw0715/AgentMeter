@@ -10,10 +10,11 @@
 
 ## ✨ 核心特色 (Features)
 
-- **極簡純選單列常駐（Stats 模式）**：純 SwiftUI 與 Swift 6 現代併發打造，預設以 macOS Accessory 輔助模式靜默常駐於 Menu Bar（右上角 AM 圖示）；全程不佔用 Dock 圖示、不干擾 Cmd+Tab 工作流程、杜絕誤關。需要時可隨時從 Menu Bar Popover 或 Spotlight/Launchpad 喚起完整桌面主視窗。
+- **極簡純選單列常駐（Stats 模式）**：純 SwiftUI 與 Swift 6 現代併發打造，預設以 macOS Accessory 輔助模式靜默常駐於 Menu Bar（右上角 AM 圖示）；全程不佔用 Dock 圖示、不干擾 Cmd+Tab 工作流程、杜絕誤關。Popover 提供帶有圖示的重新整理、開啟主視窗與結束操作，需要時也可從 Spotlight/Launchpad 喚起完整桌面主視窗。
+- **macOS 26 Liquid Glass UI**：主程式採原生側欄導覽與清晰的額度卡片，Menu Bar Popover 沿用相同的品牌徽章、Provider 分組、圓角、狀態色與材質層次；額度數字與進度資訊維持高對比，支援淺色、深色與系統外觀。
 - **雙 Provider 官方 CLI 整合**：Codex 透過本機 `codex app-server` 的標準 JSON-RPC 2.0 通訊；Antigravity 透過 `agy -p "/usage" --output-format json` 唯讀查詢。全程不抓取瀏覽器 Cookie、不直接呼叫私有端點。
 - **動態額度解析**：自動識別並正規化 Codex 的 5 小時／每週額度，以及 Antigravity 的 Gemini Models 動態 quota buckets，無須硬編碼模型清單。
-- **多 Provider 狀態隔離**：各 Provider 的載入、錯誤、快取與 Menu Bar 顯示狀態彼此獨立，單一 CLI 異常不影響其他 Provider。
+- **多 Provider 狀態隔離與排序一致**：各 Provider 的載入、錯誤、快取與 Menu Bar 顯示狀態彼此獨立；Menu Bar 依照同一份 Provider snapshot 順序呈現額度，與主程式保持一致，單一 CLI 異常不影響其他 Provider。
 - **Smart Cache 智慧快取**：Menu Bar 點擊秒開，具備自訂 TTL（預設 5 分鐘）與過期主動更新機制，不佔用多餘系統資源與電量。
 - **多語系與無障礙支援**：完整支援繁體中文（Traditional Chinese）與英文（English），自動遵循系統時區與 12/24 小時制，遵循系統外觀與 VoiceOver 語意導覽。
 
@@ -93,6 +94,9 @@ Sources/
     ├── App/                     # AgentMeterApp (Window + MenuBarExtra)
     ├── Resources/               # AppIcon, Bundle 資源
     └── Views/                   # 雙 Provider Dashboard、Menu Bar、設定與診斷
+        ├── Components/          # AgentMeterTheme、品牌徽章、狀態與額度卡片
+        ├── Desktop/             # 側欄主程式、Dashboard、設定與診斷
+        └── MenuBar/             # Menu Bar Popover 與快速操作
 ```
 
 ---
@@ -112,7 +116,7 @@ Sources/
 swift test
 ```
 
-目前共 13 套測試、34 項測試，涵蓋雙 Provider 解析、環境偵測、快取隔離、設定、診斷遮蔽、App 生命週期與本機 CLI 整合。
+目前共 13 套測試、35 項測試，涵蓋雙 Provider 解析、環境偵測、快取隔離、額度排序一致性、設定、診斷遮蔽、App 生命週期與本機 CLI 整合。
 
 ### 編譯應用程式
 ```bash
@@ -130,7 +134,7 @@ swift build -c release
 腳本會執行 Release build、組裝並以 ad-hoc identity 簽署 `AgentMeter.app`、驗證 Bundle 與 ZIP 結構，成功後移除中間 App Bundle，最後只保留發布產物：
 
 ```text
-releases/AgentMeter-v1.0.0.zip
+releases/AgentMeter-v1.0.1.zip
 ```
 
 如需使用本機 Keychain 中的 Developer ID Application identity，可指定：
@@ -145,10 +149,10 @@ CODESIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)" \
 建立與 `Resources/Info.plist` 版本一致的 Git tag 後，可將 ZIP 上傳至 GitHub Release：
 
 ```bash
-gh release create v1.0.0 \
-  releases/AgentMeter-v1.0.0.zip \
+gh release create v1.0.1 \
+  releases/AgentMeter-v1.0.1.zip \
   --verify-tag \
-  --title "AgentMeter 1.0.0" \
+  --title "AgentMeter 1.0.1" \
   --generate-notes
 ```
 
@@ -166,4 +170,3 @@ brew install --cask yuhaw0715/tap/agentmeter
 ## 📄 授權條款 (License)
 
 本專案採用 [MIT License](LICENSE) 授權。
-

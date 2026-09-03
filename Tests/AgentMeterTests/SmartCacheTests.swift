@@ -46,12 +46,13 @@ struct SmartCacheTests {
         let initialVisible = settings.resolveVisibleLimits(from: allItems)
         #expect(initialVisible.count == 3)
 
-        // Customize selection and order
+        // Customize selection. Presentation order follows the provider
+        // snapshot, matching the Desktop dashboard.
         settings.selectedLimitIds = ["weekly", "5h"]
         let customized = settings.resolveVisibleLimits(from: allItems)
         #expect(customized.count == 2)
-        #expect(customized[0].id == "weekly")
-        #expect(customized[1].id == "5h")
+        #expect(customized[0].id == "5h")
+        #expect(customized[1].id == "weekly")
 
         // Restore defaults
         settings.restoreAutomaticDefaults()

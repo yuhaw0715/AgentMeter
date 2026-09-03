@@ -1,10 +1,4 @@
-# Menu Bar Usage Specification
-
-## Purpose
-
-提供 macOS Menu Bar 狀態列圖示（極簡 AM Monogram）與互動式 Popover，用於快速查看選定的額度限制、智慧快取以及應用程式導航。
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: 狀態列圖示呈現
 
@@ -19,29 +13,6 @@
 
 - **WHEN** AgentMeter 於背景執行
 - **THEN** 系統選單列顯示符合 Apple 原生風格之粗體 `AM` 圖示
-
-### Requirement: Smart Cache 與即時 Popover 顯示
-每個 Provider SHALL 使用獨立快照並依共用 TTL 設定判斷新鮮度；手動重新整理 SHALL 繞過相應 Provider 的 TTL。
-
-#### Scenario: Provider 快取新鮮度不同
-- **WHEN** Popover 開啟時 Codex 快取有效而 Antigravity 快取過期
-- **THEN** 系統立即顯示 Codex 快照，並只對 Antigravity 顯示更新中及發起查詢
-
-#### Scenario: 快取有效時開啟 Popover
-- **WHEN** 使用者點擊選單列圖示且 Provider 快照仍在設定的 TTL 內
-- **THEN** Popover 立即開啟並呈現該 Provider 快取中的使用量，不重複呼叫 Provider
-
-#### Scenario: 快取過期時開啟 Popover
-- **WHEN** 使用者點擊選單列圖示且某 Provider 快取已過期
-- **THEN** Popover 立即開啟，對該 Provider 顯示重新整理中狀態並取得新快照
-
-#### Scenario: 手動重新整理操作
-- **WHEN** 使用者對 Provider 執行手動重新整理
-- **THEN** 系統無視該 Provider 的 TTL 並立即請求最新資料
-
-#### Scenario: 快取檢視時重新整理失敗
-- **WHEN** 由 Popover 觸發的 Provider 重新整理發生錯誤
-- **THEN** 對應 Provider 區塊呈現錯誤資訊與重試按鈕，不把過期資料冒充為最新數據
 
 ### Requirement: 即時響應式選取額度清單
 

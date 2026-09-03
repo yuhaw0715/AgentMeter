@@ -46,12 +46,12 @@
 
 ## 4. 目前專案規格與進度 (Current Specs & Status)
 
-- **已歸檔變更**：`agentmeter-mvp`（位於 [`openspec/changes/archive/2026-08-29-agentmeter-mvp/`](openspec/changes/archive/2026-08-29-agentmeter-mvp/)）、`add-antigravity-usage`（位於 [`openspec/changes/archive/2026-08-30-add-antigravity-usage/`](openspec/changes/archive/2026-08-30-add-antigravity-usage/)）、`add-release-build-script`（位於 [`openspec/changes/archive/2026-08-30-add-release-build-script/`](openspec/changes/archive/2026-08-30-add-release-build-script/)）、`keep-menu-bar-running-after-window-close`（位於 [`openspec/changes/archive/2026-08-30-keep-menu-bar-running-after-window-close/`](openspec/changes/archive/2026-08-30-keep-menu-bar-running-after-window-close/)）、`pure-menu-bar-mode`（位於 [`openspec/changes/archive/2026-09-02-pure-menu-bar-mode/`](openspec/changes/archive/2026-09-02-pure-menu-bar-mode/)）
+- **已歸檔變更**：`agentmeter-mvp`（位於 [`openspec/changes/archive/2026-08-29-agentmeter-mvp/`](openspec/changes/archive/2026-08-29-agentmeter-mvp/)）、`add-antigravity-usage`（位於 [`openspec/changes/archive/2026-08-30-add-antigravity-usage/`](openspec/changes/archive/2026-08-30-add-antigravity-usage/)）、`add-release-build-script`（位於 [`openspec/changes/archive/2026-08-30-add-release-build-script/`](openspec/changes/archive/2026-08-30-add-release-build-script/)）、`keep-menu-bar-running-after-window-close`（位於 [`openspec/changes/archive/2026-08-30-keep-menu-bar-running-after-window-close/`](openspec/changes/archive/2026-08-30-keep-menu-bar-running-after-window-close/)）、`pure-menu-bar-mode`（位於 [`openspec/changes/archive/2026-09-02-pure-menu-bar-mode/`](openspec/changes/archive/2026-09-02-pure-menu-bar-mode/)）、`macos26-liquid-glass-ui`（位於 [`openspec/changes/archive/2026-09-03-macos26-liquid-glass-ui/`](openspec/changes/archive/2026-09-03-macos26-liquid-glass-ui/)）
 - **目前變更**：無；現有 OpenSpec changes 均已完成並歸檔。
-- **目前階段**：ChatGPT Codex 與 Google Antigravity 雙 Provider 額度監控、純選單列常駐（Stats 模式，全程無 Dock 圖示、啟動靜默、Spotlight Reopen 喚起主視窗、專屬 Quit 控制項）、版本化 GitHub Release ZIP 建置流程及 Homebrew Cask 實機安裝均已完成；5 項變更已同步至主規格並完成歸檔，10 份主規格均通過 OpenSpec strict validation；13 大測試套件共 34 項測試 100% 通過。
+- **目前階段**：ChatGPT Codex 與 Google Antigravity 雙 Provider 額度監控、純選單列常駐（Stats 模式，全程無 Dock 圖示、啟動靜默、Spotlight Reopen 喚起主視窗、專屬 Quit 控制項）、macOS 26 Liquid Glass 主程式／Menu Bar 一致視覺、主程式與 Menu Bar 額度排序一致、版本化 GitHub Release ZIP 建置流程及 Homebrew Cask 實機安裝均已完成；6 項變更已同步至主規格並完成歸檔，10 份主規格均通過 OpenSpec strict validation；13 大測試套件共 35 項測試 100% 通過。
 - **支援範圍**：
   - 核心平台：macOS 26+ SwiftUI 原生應用程式（Desktop 視窗 + Menu Bar 圖示 Popover）。
-  - 視覺設計：Menu Bar 採用 Concept 2（極簡粗體 AM Monogram），App 圖示採用 Option B4（深炭灰去背 Squircle 滿版圖示）。
+  - 視覺設計：Desktop 主程式採選項 1 原生側欄與額度卡片，Menu Bar Popover 共用 macOS 26 Liquid Glass 材質、品牌徽章、Provider 分組與狀態色；Menu Bar 圖示採用極簡粗體 AM Monogram，App 圖示採用 Option B4（深炭灰去背 Squircle 滿版圖示）。
   - Provider：
     1. **ChatGPT Codex**：官方 CLI `app-server` JSON-RPC 握手與 5h / Weekly 動態額度解析。
     2. **Google Antigravity**：官方 Antigravity CLI 1.1.11+ 唯讀非互動 JSON 查詢與 Gemini Models 額度動態解析。
@@ -59,7 +59,7 @@
     1. `codex-rate-limit-provider`：Codex app-server JSON-RPC 握手與 5h / Weekly 動態額度解析。
     2. `antigravity-rate-limit-provider`：Antigravity CLI 唯讀 JSON 查詢與 Gemini Models 動態 bucket 解析過濾。
     3. `usage-dashboard`：Desktop 雙 Provider 額度儀表板、雙列標頭、左側即時 Menu Bar 釘選核取方塊。
-    4. `menu-bar-usage`：Menu Bar 常駐 AM 圖示 Popover、Smart Cache、依 Provider 分組自適應高度與純選單列常駐（Stats 模式，全程無 Dock 圖示、啟動靜默、Spotlight Reopen 喚起主視窗、專屬 Quit 控制項）。
+    4. `menu-bar-usage`：Menu Bar 常駐 AM 圖示 Popover、Smart Cache、依 Provider 分組自適應高度、額度排序與主程式一致、開啟／結束操作圖示，以及純選單列常駐（Stats 模式，全程無 Dock 圖示、啟動靜默、Spotlight Reopen 喚起主視窗、專屬 Quit 控制項）。
     5. `codex-environment-setup`：CLI PATH 偵測與引導。
     6. `agentmeter-settings`：本機偏好設定、雙 Provider 自訂 CLI 路徑、快取 TTL、開機啟動與右對齊選單。
     7. `agentmeter-diagnostics`：環境診斷與敏感資訊遮蔽報告。

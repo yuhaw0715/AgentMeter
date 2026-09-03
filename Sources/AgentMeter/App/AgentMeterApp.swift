@@ -20,6 +20,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        // Reopen is a background-entry event. Keep the accessory policy here
+        // explicit so a prior window lifecycle cannot make the Dock icon flash
+        // back into view while the Menu Bar Extra is being restored.
+        _ = sender.setActivationPolicy(.accessory)
         NSApplication.shared.activate(ignoringOtherApps: true)
         for window in sender.windows where isStandardContentWindow(window) {
             window.deminiaturize(nil)
@@ -76,7 +80,7 @@ struct AgentMeterApp: App {
         .windowResizability(.contentMinSize)
         .defaultSize(width: 760, height: 520)
 
-        // Menu Bar Extra (Concept 2 Minimal Monogram 'AM')
+        // Menu Bar Extra (Option 1 shared AM Monogram visual language)
         MenuBarExtra {
             MenuBarPopoverView(viewModel: viewModel) {
                 openMainWindow()

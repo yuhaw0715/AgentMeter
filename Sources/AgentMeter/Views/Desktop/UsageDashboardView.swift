@@ -29,73 +29,71 @@ public struct UsageDashboardView: View {
 
     public var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
-                // Header Info Banner
-                VStack(spacing: 8) {
-                    // Row 1: Left: Provider Title + Optional Plan Badge; Right: Refresh Button
-                    HStack(alignment: .center) {
-                        HStack(spacing: 8) {
-                            Text(provider.displayName)
-                                .font(.title2.weight(.bold))
+            VStack(alignment: .leading, spacing: 26) {
+                HStack(alignment: .top, spacing: 13) {
+                    Image(systemName: provider == .codex ? "terminal" : "sparkles")
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(AgentMeterTheme.accent)
+                        .frame(width: 42, height: 42)
+                        .background(AgentMeterTheme.accent.opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
 
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(provider.displayName)
+                            .font(.title2.weight(.bold))
+
+                        HStack(spacing: 7) {
                             if provider == .codex, let plan = snapshot?.accountPlan {
                                 Text(plan)
                                     .font(.caption.weight(.semibold))
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 3)
-                                    .background(Color.accentColor.opacity(0.15))
-                                    .foregroundStyle(Color.accentColor)
-                                    .clipShape(Capsule())
+                                    .foregroundStyle(AgentMeterTheme.accent)
+                            }
+
+                            if provider == .codex, let email = snapshot?.accountEmail {
+                                Text(email)
+                                    .font(.caption)
+                                    .foregroundStyle(AgentMeterTheme.secondaryText)
                             }
                         }
-
-                        Spacer()
-
-                        Button {
-                            Task {
-                                await viewModel.refreshDesktop(provider: provider)
-                            }
-                        } label: {
-                            HStack(spacing: 6) {
-                                if isRefreshing {
-                                    ProgressView()
-                                        .controlSize(.small)
-                                    Text(L10n.refreshing)
-                                } else {
-                                    Image(systemName: "arrow.clockwise")
-                                    Text(L10n.refresh)
-                                }
-                            }
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .disabled(isRefreshing)
                     }
 
-                    // Row 2: Left: Account Email (for Codex); Right: Last Updated Timestamp
-                    HStack(alignment: .center) {
-                        if provider == .codex, let email = snapshot?.accountEmail {
-                            Text(email)
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        }
+                    Spacer(minLength: 12)
 
-                        Spacer()
-
-                        if let lastRefresh = lastRefreshTime {
-                            Text(L10n.updatedText(DateFormatterHelper.formatLastRefreshTime(lastRefresh)))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
+                    AgentMeterStatusPill(
+                        title: isRefreshing ? L10n.refreshing : (lastError == nil ? (L10n.isTraditionalChinese ? "已連線" : "Connected") : L10n.refreshFailed),
+                        tint: lastError == nil ? (isRefreshing ? AgentMeterTheme.warning : AgentMeterTheme.success) : AgentMeterTheme.destructive
+                    )
                 }
 
-                Divider()
+                HStack {
+                    if let lastRefresh = lastRefreshTime {
+                        Label(
+                            L10n.updatedText(DateFormatterHelper.formatLastRefreshTime(lastRefresh)),
+                            systemImage: "clock"
+                        )
+                    }
+
+                    Spacer()
+
+                    Button {
+                        Task {
+                            await viewModel.refreshDesktop(provider: provider)
+                        }
+                    } label: {
+                        Label(isRefreshing ? L10n.refreshing : L10n.refresh, systemImage: "arrow.clockwise")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(AgentMeterTheme.accent)
+                    .controlSize(.regular)
+                    .disabled(isRefreshing)
+                }
+                .font(.caption)
+                .foregroundStyle(AgentMeterTheme.secondaryText)
 
                 // Error State Banner
                 if let error = lastError {
                     HStack(spacing: 12) {
                         Image(systemName: "exclamationmark.triangle.fill")
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(AgentMeterTheme.warning)
                             .font(.title2)
 
                         VStack(alignment: .leading, spacing: 2) {
@@ -103,7 +101,7 @@ public struct UsageDashboardView: View {
                                 .font(.headline)
                             Text(error)
                                 .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(AgentMeterTheme.secondaryText)
                         }
 
                         Spacer()
@@ -115,9 +113,12 @@ public struct UsageDashboardView: View {
                         }
                         .buttonStyle(.bordered)
                     }
-                    .padding()
-                    .background(Color.orange.opacity(0.1))
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .padding(14)
+                    .background(AgentMeterTheme.warning.opacity(0.10), in: RoundedRectangle(cornerRadius: AgentMeterTheme.cornerRadius, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: AgentMeterTheme.cornerRadius, style: .continuous)
+                            .stroke(AgentMeterTheme.warning.opacity(0.25), lineWidth: 0.7)
+                    }
                 }
 
                 // Section: Real-time Quotas with Left-Aligned Menu Bar Checkboxes
@@ -129,7 +130,7 @@ public struct UsageDashboardView: View {
                                     .font(.headline)
                                 Text(L10n.currentUsageHint)
                                     .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(AgentMeterTheme.secondaryText)
                             }
 
                             Spacer()
@@ -140,7 +141,7 @@ public struct UsageDashboardView: View {
                                 }
                                 .buttonStyle(.plain)
                                 .font(.caption)
-                                .foregroundStyle(Color.accentColor)
+                                .foregroundStyle(AgentMeterTheme.accent)
                             }
                         }
 
@@ -166,6 +167,7 @@ public struct UsageDashboardView: View {
                                     )
                                     .toggleStyle(.checkbox)
                                     .help(L10n.showInMenuBar)
+                                    .tint(AgentMeterTheme.accent)
 
                                     // Rate Limit Card View
                                     RateLimitCardView(item: item, isCompact: false)
@@ -188,8 +190,9 @@ public struct UsageDashboardView: View {
                     .padding(.vertical, 40)
                 }
             }
-            .padding(24)
+            .padding(28)
         }
+        .background(AgentMeterTheme.pageBackground)
         .frame(minWidth: 500, minHeight: 400)
     }
 }

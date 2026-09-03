@@ -45,35 +45,70 @@ public struct MainDesktopContainerView: View {
 
     public var body: some View {
         NavigationSplitView {
-            List(selection: $selectedSection) {
-                Section(L10n.providers) {
-                    NavigationLink(value: NavigationSection.codex) {
-                        Label {
-                            Text(NavigationSection.codex.title)
-                        } icon: {
-                            Image(systemName: NavigationSection.codex.iconName)
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(alignment: .top, spacing: 10) {
+                    AgentMeterBrandMark(size: 36)
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(L10n.appName)
+                            .font(.headline.weight(.semibold))
+                        Text(L10n.isTraditionalChinese ? "你的 AI 額度，一目瞭然。" : "Your AI usage at a glance.")
+                            .font(.caption)
+                            .foregroundStyle(AgentMeterTheme.secondaryText)
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 16)
+                .padding(.bottom, 12)
+
+                Divider()
+                    .padding(.horizontal, 12)
+
+                List(selection: $selectedSection) {
+                    Section(L10n.providers) {
+                        NavigationLink(value: NavigationSection.codex) {
+                            Label {
+                                Text(NavigationSection.codex.title)
+                            } icon: {
+                                Image(systemName: NavigationSection.codex.iconName)
+                            }
+                        }
+
+                        NavigationLink(value: NavigationSection.antigravity) {
+                            Label {
+                                Text(NavigationSection.antigravity.title)
+                            } icon: {
+                                Image(systemName: NavigationSection.antigravity.iconName)
+                            }
                         }
                     }
 
-                    NavigationLink(value: NavigationSection.antigravity) {
-                        Label {
-                            Text(NavigationSection.antigravity.title)
-                        } icon: {
-                            Image(systemName: NavigationSection.antigravity.iconName)
+                    Section(L10n.application) {
+                        NavigationLink(value: NavigationSection.settings) {
+                            Label(NavigationSection.settings.title, systemImage: NavigationSection.settings.iconName)
+                        }
+                        NavigationLink(value: NavigationSection.diagnostics) {
+                            Label(NavigationSection.diagnostics.title, systemImage: NavigationSection.diagnostics.iconName)
                         }
                     }
                 }
+                .scrollContentBackground(.hidden)
+                .listStyle(.sidebar)
 
-                Section(L10n.application) {
-                    NavigationLink(value: NavigationSection.settings) {
-                        Label(NavigationSection.settings.title, systemImage: NavigationSection.settings.iconName)
-                    }
-                    NavigationLink(value: NavigationSection.diagnostics) {
-                        Label(NavigationSection.diagnostics.title, systemImage: NavigationSection.diagnostics.iconName)
-                    }
+                HStack(spacing: 7) {
+                    Circle()
+                        .fill(AgentMeterTheme.success)
+                        .frame(width: 7, height: 7)
+                    Text(L10n.isTraditionalChinese ? "本機額度監控" : "Local usage monitor")
+                        .font(.caption)
+                        .foregroundStyle(AgentMeterTheme.secondaryText)
+                    Spacer()
                 }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 12)
             }
-            .listStyle(.sidebar)
+            .background(AgentMeterTheme.sidebarMaterial)
+            .tint(AgentMeterTheme.accent)
             .navigationSplitViewColumnWidth(min: 190, ideal: 210, max: 250)
         } detail: {
             Group {
@@ -109,6 +144,7 @@ public struct MainDesktopContainerView: View {
                 }
             }
             .frame(minWidth: 480, minHeight: 400)
+            .background(AgentMeterTheme.pageBackground)
         }
         .onChange(of: selectedSection) { _, newSection in
             if let section = newSection {

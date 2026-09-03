@@ -1,10 +1,4 @@
-# Usage Dashboard Specification
-
-## Purpose
-
-提供 macOS SwiftUI Desktop 主視窗介面，完整查看所有已偵測到的 Codex 與 Antigravity 額度限制、狀態指示器、雙列標頭與左側 Menu Bar 釘選核取方塊。
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: 於 Desktop 主視窗顯示所有已偵測額度
 
@@ -63,14 +57,3 @@
 
 - **WHEN** 使用者將焦點切換至目前 Provider Dashboard 或重新開啟視窗
 - **THEN** AgentMeter 立即對該 Provider 發起重新整理並顯示「Refreshing…」指示器
-
-### Requirement: 狀態與錯誤呈現
-系統 SHALL 清晰區分載入中、成功與失敗狀態，並在取得失敗時提供重試機制。
-
-#### Scenario: 正在重新整理中
-- **WHEN** rate limit 請求正在執行中
-- **THEN** UI 呈現進行中的重新整理狀態並標記最後更新時間
-
-#### Scenario: 重新整理失敗並提供重試選項
-- **WHEN** 主動重新整理失敗
-- **THEN** UI 顯示錯誤描述與「重試」按鈕，而非將過期資料假裝為目前最新資料

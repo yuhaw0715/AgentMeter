@@ -155,29 +155,23 @@ public final class SettingsManager: @unchecked Sendable {
         }
     }
 
-    /// Filters and orders rate limits for Menu Bar presentation for a specific provider.
+    /// Filters rate limits for Menu Bar presentation while preserving the
+    /// provider snapshot order used by the Desktop dashboard.
     public func resolveVisibleLimits(from items: [RateLimitItem], for provider: ProviderType) -> [RateLimitItem] {
         if !hasCustomizedLimits(for: provider) || selectedLimitIds(for: provider).isEmpty {
             return items
         }
 
-        let selected = selectedLimitIds(for: provider)
-        var resultMap: [String: RateLimitItem] = [:]
-        for item in items {
-            resultMap[item.id] = item
-        }
-
-        var visibleItems: [RateLimitItem] = []
-        for id in selected {
-            if let item = resultMap[id] {
-                visibleItems.append(item)
-            }
-        }
+        // The selected IDs describe visibility, not presentation order. The
+        // provider response is the source of truth for ordering so Desktop
+        // and Menu Bar always show the same sequence for every provider.
+        let selected = Set(selectedLimitIds(for: provider))
+        let visibleItems = items.filter { selected.contains($0.id) }
 
         return visibleItems.isEmpty ? items : visibleItems
     }
 
-    /// Filters and orders rate limits for Menu Bar presentation (defaults to Codex).
+    /// Filters rate limits for Menu Bar presentation (defaults to Codex).
     public func resolveVisibleLimits(from items: [RateLimitItem]) -> [RateLimitItem] {
         return resolveVisibleLimits(from: items, for: .codex)
     }

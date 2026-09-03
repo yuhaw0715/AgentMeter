@@ -66,4 +66,21 @@ struct AntigravityCacheAndSettingsTests {
         let visibleRestored = settings.resolveVisibleLimits(from: [item1, item2], for: .antigravity)
         #expect(visibleRestored.count == 2)
     }
+
+    @Test("Menu Bar preserves provider snapshot order after filtering")
+    func testVisibleLimitsPreserveSnapshotOrder() {
+        let userDefaults = UserDefaults(suiteName: "AntigravityOrderTest_\(UUID().uuidString)")!
+        let settings = SettingsManager(userDefaults: userDefaults)
+
+        let weekly = RateLimitItem(id: "g_weekly", name: "Gemini Weekly", usedPercentage: 20.0)
+        let fiveHour = RateLimitItem(id: "g_5h", name: "Gemini 5h", usedPercentage: 5.0)
+        let snapshotOrder = [weekly, fiveHour]
+
+        // Simulate persisted selections written in the reverse order. Menu Bar
+        // should still follow the provider snapshot shown by Desktop.
+        settings.setSelectedLimitIds([fiveHour.id, weekly.id], for: .antigravity)
+
+        let visible = settings.resolveVisibleLimits(from: snapshotOrder, for: .antigravity)
+        #expect(visible.map(\.id) == snapshotOrder.map(\.id))
+    }
 }
