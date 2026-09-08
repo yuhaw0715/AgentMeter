@@ -7,19 +7,22 @@ public struct RateLimitSnapshot: Sendable, Codable, Equatable {
     public let items: [RateLimitItem]
     public let accountEmail: String?
     public let accountPlan: String?
+    public let resetCredits: RateLimitResetCredits?
 
     public init(
         provider: ProviderType,
         fetchedAt: Date = Date(),
         items: [RateLimitItem],
         accountEmail: String? = nil,
-        accountPlan: String? = nil
+        accountPlan: String? = nil,
+        resetCredits: RateLimitResetCredits? = nil
     ) {
         self.provider = provider
         self.fetchedAt = fetchedAt
         self.items = items
         self.accountEmail = accountEmail
         self.accountPlan = accountPlan
+        self.resetCredits = resetCredits
     }
 
     /// Helper to find a specific limit item by id.

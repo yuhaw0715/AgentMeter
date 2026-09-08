@@ -128,6 +128,7 @@ public struct MenuBarPopoverView: View {
         let isRefreshing = viewModel.refreshingProviders.contains(provider)
         let error = viewModel.lastErrors[provider]
         let items = viewModel.visibleLimits(for: provider)
+        let resetCredits = viewModel.snapshots[provider]?.resetCredits
 
         VStack(alignment: .leading, spacing: 8) {
             // Section Header
@@ -206,6 +207,42 @@ public struct MenuBarPopoverView: View {
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.vertical, 8)
             }
+
+            // Codex uses one provider surface; the reset-credit subsection is
+            // separated with a divider and never becomes a nested card.
+            if provider == .codex {
+                Divider()
+                    .padding(.vertical, 2)
+
+                HStack(alignment: .firstTextBaseline) {
+                    Image(systemName: "arrow.clockwise.circle")
+                        .foregroundStyle(AgentMeterTheme.accent)
+                        .font(.caption.weight(.semibold))
+
+                    Text(L10n.resetCreditsTitle)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(AgentMeterTheme.primaryText)
+
+                    Spacer()
+
+                    if let resetCredits {
+                        Text(L10n.availableResetCredits(resetCredits.availableCount))
+                            .font(.caption.weight(.semibold).monospacedDigit())
+                            .foregroundStyle(AgentMeterTheme.accent)
+                    }
+                }
+
+                ResetCreditListView(resetCredits: resetCredits, isCompact: true)
+            }
+        }
+        .padding(10)
+        .background(
+            AgentMeterTheme.contentBackground.opacity(0.38),
+            in: RoundedRectangle(cornerRadius: AgentMeterTheme.cornerRadius, style: .continuous)
+        )
+        .overlay {
+            RoundedRectangle(cornerRadius: AgentMeterTheme.cornerRadius, style: .continuous)
+                .stroke(AgentMeterTheme.divider.opacity(0.8), lineWidth: 0.6)
         }
     }
 }

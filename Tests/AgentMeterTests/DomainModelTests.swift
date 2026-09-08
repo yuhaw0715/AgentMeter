@@ -48,6 +48,59 @@ struct DomainModelTests {
         #expect(snapshot.item(withId: "non_existent") == nil)
     }
 
+    @Test("Reset credit model preserves detail availability and legacy snapshot decoding")
+    func testResetCreditModelAndCodableCompatibility() throws {
+        let expiration = Date(timeIntervalSince1970: 1_800_000_000)
+        let credit = RateLimitResetCredit(
+            id: "opaque-credit-id",
+            resetType: "five_hour",
+            status: "available",
+            grantedAt: Date(timeIntervalSince1970: 1_700_000_000),
+            expiresAt: expiration,
+            title: "Server title",
+            description: "Server description"
+        )
+        let summary = RateLimitResetCredits(availableCount: 2, credits: [credit])
+        #expect(summary.detailsProvided == true)
+        #expect(summary.missingDetailCount == 1)
+        #expect(summary.isKnownZero == false)
+
+        let snapshot = RateLimitSnapshot(
+            provider: .codex,
+            items: [],
+            resetCredits: summary
+        )
+        let encoded = try JSONEncoder().encode(snapshot)
+        let decoded = try JSONDecoder().decode(RateLimitSnapshot.self, from: encoded)
+        #expect(decoded == snapshot)
+        #expect(decoded.resetCredits?.credits?.first?.title == "Server title")
+
+        let legacySnapshot = RateLimitSnapshot(provider: .codex, items: [RateLimitItem(id: "legacy", name: "Legacy", usedPercentage: 1)])
+        let legacyData = try JSONEncoder().encode(legacySnapshot)
+        let legacyDecoded = try JSONDecoder().decode(RateLimitSnapshot.self, from: legacyData)
+        #expect(legacyDecoded.resetCredits == nil)
+        #expect(legacyDecoded.item(withId: "legacy") != nil)
+
+        let emptySummary = RateLimitResetCredits(availableCount: 0, credits: [])
+        #expect(emptySummary.detailsProvided == true)
+        #expect(emptySummary.missingDetailCount == 0)
+        #expect(emptySummary.isKnownZero == true)
+
+        let unavailableSummary = RateLimitResetCredits(availableCount: 4, credits: nil)
+        #expect(unavailableSummary.detailsProvided == false)
+        #expect(unavailableSummary.missingDetailCount == nil)
+    }
+
+    @Test("Reset credit expiration is presentation-only")
+    func testResetCreditExpirationState() {
+        let expiration = Date(timeIntervalSince1970: 1_000)
+        let credit = RateLimitResetCredit(id: "credit", expiresAt: expiration)
+        #expect(credit.isExpired(at: Date(timeIntervalSince1970: 999)) == false)
+        #expect(credit.isExpired(at: expiration) == true)
+        #expect(credit.isExpired(at: Date(timeIntervalSince1970: 1_001)) == true)
+        #expect(RateLimitResetCredit(id: "undated").isExpired(at: Date(timeIntervalSince1970: 10_000)) == false)
+    }
+
     @Test("ProviderType support filtering")
     func testProviderTypeSupport() {
         #expect(ProviderType.codex.isSupported == true)

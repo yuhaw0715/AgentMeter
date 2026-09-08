@@ -14,6 +14,7 @@
 - **macOS 26 Liquid Glass UI**：主程式採原生側欄導覽與清晰的額度卡片，Menu Bar Popover 沿用相同的品牌徽章、Provider 分組、圓角、狀態色與材質層次；額度數字與進度資訊維持高對比，支援淺色、深色與系統外觀。
 - **雙 Provider 官方 CLI 整合**：Codex 透過本機 `codex app-server` 的標準 JSON-RPC 2.0 通訊；Antigravity 透過 `agy -p "/usage" --output-format json` 唯讀查詢。全程不抓取瀏覽器 Cookie、不直接呼叫私有端點。
 - **動態額度解析**：自動識別並正規化 Codex 的 5 小時／每週額度，以及 Antigravity 的 Gemini Models 動態 quota buckets，無須硬編碼模型清單。
+- **Codex 重置券唯讀顯示**：從同一次 `account/rateLimits/read` 取得權威 `availableCount`，顯示逐張明細、最早到期排序、明細不足、已知零張、資訊未提供與快取過期狀態；不提供券的使用或兌換操作。
 - **多 Provider 狀態隔離與排序一致**：各 Provider 的載入、錯誤、快取與 Menu Bar 顯示狀態彼此獨立；Menu Bar 依照同一份 Provider snapshot 順序呈現額度，與主程式保持一致，單一 CLI 異常不影響其他 Provider。
 - **Smart Cache 智慧快取**：Menu Bar 點擊秒開，具備自訂 TTL（預設 5 分鐘）與過期主動更新機制，不佔用多餘系統資源與電量。
 - **多語系與無障礙支援**：完整支援繁體中文（Traditional Chinese）與英文（English），自動遵循系統時區與 12/24 小時制，遵循系統外觀與 VoiceOver 語意導覽。
@@ -23,6 +24,7 @@
 ## 🛡️ 安全與隱私承諾 (Privacy & Security)
 
 - **嚴格唯讀**：應用程式採嚴格唯讀設計，僅查詢本機 CLI 輸出的額度資訊，不提供任何未授權修改或寫入管道。
+- **Codex 重置券不消耗**：只讀取 `rateLimitResetCredits`，絕不呼叫 `account/rateLimitResetCredit/consume`，不會使用、兌換或消耗重置券。
 - **純記憶體處理**：額度資料僅暫存於記憶體中，絕不持久化儲存至本地資料庫或未經授權之磁碟空間。
 - **零遙測與資料收集**：無任何遙測分析代碼 (Telemetry/Analytics)，不收集使用記錄，不回傳任何資訊至外部伺服器。
 - **最小權限 App Sandbox**：嚴格於 macOS App Sandbox 內受限執行，僅申請必要權限。
@@ -84,7 +86,7 @@ AgentMeter 採用 Clean Architecture 與 MVVM 分層架構：
 ```text
 Sources/
 ├── AgentMeterCore/              # 核心領域、Provider 與業務邏輯庫
-│   ├── Domain/                  # RateLimitItem, Snapshot, ProviderType, AgentProvider 協定
+│   ├── Domain/                  # RateLimitItem, Snapshot, ResetCredit, ProviderType, AgentProvider 協定
 │   ├── Providers/Codex/         # Codex JSON-RPC、額度解析與環境偵測
 │   ├── Providers/Antigravity/   # agy 唯讀查詢、動態 bucket 解析與版本偵測
 │   ├── Services/                # 多 Provider Smart Cache、設定與診斷遮蔽
@@ -94,7 +96,7 @@ Sources/
     ├── App/                     # AgentMeterApp (Window + MenuBarExtra)
     ├── Resources/               # AppIcon, Bundle 資源
     └── Views/                   # 雙 Provider Dashboard、Menu Bar、設定與診斷
-        ├── Components/          # AgentMeterTheme、品牌徽章、狀態與額度卡片
+        ├── Components/          # AgentMeterTheme、品牌徽章、狀態、額度與重置券卡片
         ├── Desktop/             # 側欄主程式、Dashboard、設定與診斷
         └── MenuBar/             # Menu Bar Popover 與快速操作
 ```
@@ -116,12 +118,26 @@ Sources/
 swift test
 ```
 
-目前共 13 套測試、35 項測試，涵蓋雙 Provider 解析、環境偵測、快取隔離、額度排序一致性、設定、診斷遮蔽、App 生命週期與本機 CLI 整合。
+目前共 13 套測試、41 項測試，涵蓋雙 Provider 解析、Codex 重置券三態資料與排序、唯讀 transport、快取隔離與過期呈現、環境偵測、額度排序一致性、設定、診斷遮蔽、App 生命週期與本機 CLI 整合。
+
+只執行重置券相關測試：
+
+```bash
+swift test --filter 'CodexProviderTests|DomainModelTests|SmartCacheTests|LocalizationTests'
+```
 
 ### 編譯應用程式
 ```bash
 swift build -c release
 ```
+
+### 本機啟動
+
+```bash
+swift run AgentMeter
+```
+
+在 Desktop 選擇 ChatGPT Codex 並重新整理；重置券會顯示在額度卡下方。點擊 Menu Bar 的 AM 圖示，可確認重置券與 Codex 額度共用單一 Provider 外框。
 
 ### 建立 GitHub Release 發布產物
 
@@ -136,6 +152,8 @@ swift build -c release
 ```text
 releases/AgentMeter-v1.0.1.zip
 ```
+
+腳本也會輸出 ZIP 的 SHA-256；發布到 GitHub Release 或更新 Homebrew Cask 時，請以該次執行輸出的 checksum 為準。
 
 如需使用本機 Keychain 中的 Developer ID Application identity，可指定：
 

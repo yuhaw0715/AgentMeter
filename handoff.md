@@ -2,6 +2,50 @@
 
 本文件整理了 **AgentMeter** 專案的架構、目前最新實作成效、技術細節、規範以及開啟新對話時供下一位 AI Agent / 開發者快速銜接的交接 Prompt。
 
+> [!IMPORTANT]
+> 本文件以 **2026-09-08「Codex 重置券顯示」規劃狀態**為最新交接基準；下方既有發布紀錄屬已完成歷史背景。當兩者敘述不同時，以本段及第 7 節的新交接 Prompt 為準。
+
+## 🆕 目前進行中：Codex 重置券顯示
+
+- **OpenSpec change**：`add-codex-reset-credit-display`
+- **位置**：`openspec/changes/add-codex-reset-credit-display/`
+- **狀態**：Proposal、4 份 delta specs、Design、Tasks 均已建立；Desktop 與 Menu Bar 排版均已確認，尚未取得使用者實作核准，亦未修改 Swift 程式碼。
+- **Git 狀態**：目前只有上述 change 目錄為未追蹤內容；未執行 commit 或 push。
+- **官方資料來源**：[Codex App Server 官方文件](https://learn.chatgpt.com/docs/app-server)。
+
+### 已確認的官方 API 與資料語意
+
+- 沿用既有 JSON-RPC `account/rateLimits/read`；回應可包含 `rateLimitResetCredits`。
+- `rateLimitResetCredits.availableCount` 是可用券總數的權威值。
+- `credits` 可能為 `null`、空陣列或遭服務端截斷；明細可包含 `id`、`resetType`、`status`、`grantedAt`、`expiresAt`、`title`、`description`。
+- 官方另提供 `account/rateLimitResetCredit/consume`，但本次已明確排除，不得加入使用、兌換或消耗功能。
+
+### 使用者已確認的需求
+
+1. 功能維持唯讀，只顯示重置券。
+2. Desktop 與 Menu Bar 都要顯示。
+3. `availableCount` 大於明細筆數時，顯示已取得明細及「其餘 N 張未提供明細」。
+4. 券依最早到期優先排序，顯示 `yyyy-MM-dd HH:mm:ss`；`expiresAt == null` 顯示「無到期資訊」。
+5. 明確區分已知 0 張與「資訊未提供」；新欄位缺失不得造成既有 Codex 額度刷新失敗。
+6. Desktop 使用已確認的 A 堆疊式獨立重置券資訊卡；標頭同一行左側顯示「重置券」、右側顯示「N 張可用」，下方逐張顯示到期資訊。
+7. Menu Bar 使用已確認的 A 方案：ChatGPT Codex 只有一個外框，額度列與重置券列置於同一容器，只以水平分隔線區隔，不建立巢狀卡片。
+8. 重置券區段永遠顯示，不新增 Menu Bar 顯示開關。
+9. UI 只顯示本地化券編號與到期時間；官方 `title`／`description` 保留於模型但不呈現。
+10. 快取券超過到期時間時保留該列並標示「已到期，等待刷新」，不在本機扣除服務端權威總數。
+11. 延續 macOS 26 Liquid Glass 視覺；示意圖只作設計參考。
+
+### 設計附件
+
+- `openspec/changes/add-codex-reset-credit-display/assets/desktop-reset-credit-variants.png`：Desktop A／B／C 比較用原始方案。
+- `openspec/changes/add-codex-reset-credit-display/assets/desktop-reset-credit-selected-a.png`：Desktop 已確認的 A 最終版，標題與可用總數同列。
+- `openspec/changes/add-codex-reset-credit-display/assets/menubar-integrated-reset-credit-variants.png`：Menu Bar 真正共用單一 Codex 外框的三案；使用者已選 A。
+
+### 下一位 Agent 的首要工作
+
+1. 先檢查 OpenSpec 文件與最終 Desktop／Menu Bar 示意圖，確認所有已定案內容一致。
+2. 將 OpenSpec strict validation 結果與 proposal 交給使用者審閱。
+3. 在使用者明確核准 proposal 前，不得實作 Swift 程式碼。
+
 ---
 
 ## 📌 1. 專案概況 (Project Overview)
@@ -82,7 +126,7 @@ graph TD
 
 ## 🧪 3. 測試與驗證現況 (Verification & Test Status)
 
-- **單元與整合測試 (`swift test`)**：**12 大測試套件共 31 項測試 100% 通過**（包含與本機真實 `codex app-server` 及 `agy /usage` 的實測抓取連線）。
+- **既有單元與整合測試 (`swift test`)**：最近一次已完成基準為 **13 大測試套件共 35 項測試 100% 通過**；本次重置券變更仍在規劃階段，尚未新增或執行其實作測試。
 - **正式發布編譯 (`swift build -c release`)**：0 警告、0 錯誤。
 - **發布腳本 (`scripts/build-release.sh`)**：已通過 Shell 語法、App Bundle 結構、`plutil`、`codesign --verify --deep --strict`、ZIP 頂層結構與 SHA-256 驗證。
 - **發布產物**：`releases/AgentMeter-v0.1.0.zip`（Apple Silicon `arm64`，約 3.8 MB），SHA-256 為 `3e6d91bde7f4167ca5571e39efa462dbd6d2a1c65cd50e1c02eb63b0a5eadbe2`。
@@ -131,8 +175,9 @@ graph TD
 
 ### 下一步
 
-1. 依使用者審閱結果提交本次 OpenSpec 歸檔與文件狀態更新；未經明確指示不得 commit／push。
-2. 未來每次發布前更新 `Resources/Info.plist` 版本、重跑發布腳本、上傳確切 ZIP，並以該 ZIP 的 SHA-256 更新 tap。
+1. 審閱 `add-codex-reset-credit-display` 最終文件與示意圖；取得使用者明確核准後才可進入實作。
+2. 未經明確指示不得 commit／push；本次 change 亦不得提早歸檔。
+3. 未來每次發布前更新 `Resources/Info.plist` 版本、重跑發布腳本、上傳確切 ZIP，並以該 ZIP 的 SHA-256 更新 tap。
 
 ---
 
@@ -178,11 +223,13 @@ AgentMeter/
 ## 🤝 7. 新對話交接 Prompt
 
 ```text
-請接手 /Users/yuhao/Projects/AgentMeter 專案，先完整閱讀 AGENTS.md 與 handoff.md，並嚴格遵守其中規範。
+請接手 `/Users/yuhao/Projects/AgentMeter` 專案。先完整閱讀 `AGENTS.md`、`handoff.md` 與 `openspec/changes/add-codex-reset-credit-display/` 的全部規劃文件，並先以唯讀方式執行 `git status --short` 與 `openspec status --change add-codex-reset-credit-display`，不要覆蓋任何既有變更。
 
-目前 ChatGPT Codex 與 Google Antigravity 雙 Provider 額度監控均已完成，12 套測試共 31 項測試全數通過。macOS 發布流程 `add-release-build-script` 亦已完成：`scripts/build-release.sh` 會建立、簽署及驗證 App Bundle，輸出版本化的 `releases/AgentMeter-v<版本>.zip`，計算 SHA-256，並在成功後移除中間 AgentMeter.app。GitHub Release v0.1.0 與 Homebrew Cask `yuhaw0715/tap/agentmeter` 已完成實機安裝驗證。
+目前進行中的 OpenSpec change 是 `add-codex-reset-credit-display`。官方 Codex app-server 文件確認 `account/rateLimits/read` 可回傳 `rateLimitResetCredits`，其中 `availableCount` 是權威總數，`credits` 明細可能為 null、空陣列或遭截斷；官方也有 `account/rateLimitResetCredit/consume`，但本次需求已明確限定為唯讀，禁止加入使用或兌換功能。
 
-請先檢查兩個 repository 的 git status 與最近 commits，不要修改或覆蓋任何使用者既有變更。`add-release-build-script` 已同步至主規格並歸檔於 `openspec/changes/archive/2026-08-30-add-release-build-script/`。若需要進行其他複雜變更，先依 OpenSpec 流程提出繁體中文 Proposal／Design／Tasks 並等待核准。
+已確認需求：Desktop 與 Menu Bar 都顯示重置券；逐張顯示 `yyyy-MM-dd HH:mm:ss` 到期時間並依最早到期排序；缺少期限顯示「無到期資訊」；明細不足顯示「其餘 N 張未提供明細」；區分 0 張與資訊未提供；快取券到期後保留並標示等待刷新；區段永遠顯示且不新增開關。Desktop 已確定採 A 堆疊式獨立資訊卡，標頭同一行左側顯示標題、右側顯示可用總數。Menu Bar 已確定採 A 方案：ChatGPT Codex 只有一個外框，額度與重置券共用容器，只以水平分隔線區隔。
 
-未經我明確指示，不得執行 git commit 或 git push；所有 commit 訊息、OpenSpec 文件、實作計畫與結案文件均使用繁體中文。
+所有產品排版決策均已確認。請先執行 `openspec validate add-codex-reset-credit-display --strict --no-interactive`，向我整理 proposal、最終示意圖與驗證結果，並詢問是否核准進入實作。未經我明確核准 proposal，不得開始 Swift 實作或歸檔 change。
+
+未經我明確指示，不得執行 `git commit` 或 `git push`；所有 commit 訊息、OpenSpec 文件、實作計畫、handoff 與 walkthrough 均使用繁體中文。
 ```

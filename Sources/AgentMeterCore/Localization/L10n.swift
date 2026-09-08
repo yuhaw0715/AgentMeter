@@ -80,6 +80,32 @@ public enum L10n {
     public static var noDataAvailable: String { isTraditionalChinese ? "尚無使用額度資料" : "No rate limit data available" }
     public static var clickRefreshHint: String { isTraditionalChinese ? "點擊重新整理以獲取目前額度資訊。" : "Click refresh to fetch current quota information." }
 
+    // Codex Reset Credits
+    public static var resetCreditsTitle: String { isTraditionalChinese ? "重置券" : "Reset credits" }
+    public static func availableResetCredits(_ count: Int) -> String {
+        if isTraditionalChinese {
+            return count == 0 ? "可用重置券 0 張" : "\(count) 張可用"
+        }
+        if count == 0 {
+            return "0 reset credits available"
+        }
+        return count == 1 ? "1 available" : "\(count) available"
+    }
+    public static func resetCreditLabel(_ number: Int) -> String {
+        isTraditionalChinese ? "重置券 \(number)" : "Reset Credit \(number)"
+    }
+    public static var resetCreditExpirationLabel: String { isTraditionalChinese ? "到期" : "Expires" }
+    public static var resetCreditNoExpiration: String { isTraditionalChinese ? "無到期資訊" : "No expiration information" }
+    public static func resetCreditMissingDetails(_ count: Int) -> String {
+        if isTraditionalChinese {
+            return "其餘 \(count) 張未提供明細"
+        }
+        return count == 1 ? "1 additional credit has no details." : "\(count) additional credits have no details."
+    }
+    public static var resetCreditsInformationUnavailable: String { isTraditionalChinese ? "重置券資訊未提供" : "Reset credit information unavailable" }
+    public static var resetCreditDetailsUnavailable: String { isTraditionalChinese ? "重置券明細未提供" : "Reset credit details unavailable" }
+    public static var resetCreditExpiredWaiting: String { isTraditionalChinese ? "已到期，等待刷新" : "Expired, waiting for refresh" }
+
     // Settings
     public static var settingsSubtitle: String { isTraditionalChinese ? "自訂重新整理頻率、開機啟動與執行檔路徑。" : "Customize refresh interval, launch at login, and executable paths." }
     public static var generalSection: String { isTraditionalChinese ? "一般設定" : "General" }

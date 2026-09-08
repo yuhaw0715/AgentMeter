@@ -31,6 +31,30 @@ struct SmartCacheTests {
         #expect(cache.currentSnapshot == nil)
     }
 
+    @Test("Expired cached reset credit remains available with authoritative count")
+    func testCachedResetCreditExpirationDoesNotChangeCount() {
+        let baseDate = Date(timeIntervalSince1970: 2_000)
+        let snapshot = RateLimitSnapshot(
+            provider: .codex,
+            fetchedAt: baseDate,
+            items: [],
+            resetCredits: RateLimitResetCredits(
+                availableCount: 2,
+                credits: [RateLimitResetCredit(
+                    id: "expiring",
+                    expiresAt: baseDate.addingTimeInterval(60)
+                )]
+            )
+        )
+        let cache = SmartCacheManager(initialSnapshot: snapshot)
+        let currentDate = baseDate.addingTimeInterval(120)
+        let cached = cache.currentSnapshot(for: .codex)
+
+        #expect(cached?.resetCredits?.availableCount == 2)
+        #expect(cached?.resetCredits?.credits?.first?.isExpired(at: currentDate) == true)
+        #expect(cache.getFreshSnapshot(for: .codex, ttl: 300, currentDate: currentDate) != nil)
+    }
+
     @Test("SettingsManager visible limit resolution and default restore")
     func testSettingsLimitResolution() {
         let suiteName = "test.agentmeter.settings.\(UUID().uuidString)"

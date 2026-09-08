@@ -30,4 +30,17 @@ public struct DateFormatterHelper: Sendable {
         formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
         return formatter.string(from: date)
     }
+
+    /// Formats a reset-credit expiration using the product's full timestamp format.
+    public static func formatResetCreditDate(
+        _ date: Date,
+        locale: Locale = Locale(identifier: "en_US_POSIX"),
+        timeZone: TimeZone = .current
+    ) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = locale
+        formatter.timeZone = timeZone
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        return formatter.string(from: date)
+    }
 }

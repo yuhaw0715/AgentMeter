@@ -80,6 +80,10 @@ public final class CodexRateLimitProvider: AgentProvider, Sendable {
         // Case 3: Dictionary of key-value limit blocks (e.g. fiveHourLimit: {...}, weeklyLimit: {...})
         if items.isEmpty {
             for (key, value) in result {
+                // This is a separate summary object, not a quota limit block.
+                if key == "rateLimitResetCredits" {
+                    continue
+                }
                 if let subDict = value as? [String: Any] {
                     if let item = parseSingleLimitDict(subDict, fallbackId: key, fallbackName: formatKeyAsTitle(key)) {
                         items.append(item)
@@ -112,13 +116,85 @@ public final class CodexRateLimitProvider: AgentProvider, Sendable {
             return itemA.name < itemB.name
         }
 
+        let resetCredits = parseResetCredits(from: result)
+
         return RateLimitSnapshot(
             provider: .codex,
             fetchedAt: Date(),
             items: items,
             accountEmail: accountEmail,
-            accountPlan: accountPlan
+            accountPlan: accountPlan,
+            resetCredits: resetCredits
         )
+    }
+
+    /// Parses the optional reset-credit portion without making the existing
+    /// rate-limit payload path depend on the new field.
+    private func parseResetCredits(from result: [String: Any]) -> RateLimitResetCredits? {
+        guard let rawSummary = result["rateLimitResetCredits"],
+              !(rawSummary is NSNull),
+              let summary = rawSummary as? [String: Any],
+              let availableCount = parseInteger(summary["availableCount"]) else {
+            return nil
+        }
+
+        let credits: [RateLimitResetCredit]?
+        if let rawCredits = summary["credits"] {
+            if rawCredits is NSNull {
+                credits = nil
+            } else if let rawCreditArray = rawCredits as? [Any] {
+                credits = rawCreditArray.enumerated().compactMap { _, rawCredit in
+                    guard let credit = rawCredit as? [String: Any],
+                          let id = credit["id"] as? String,
+                          !id.isEmpty else {
+                        return nil
+                    }
+
+                    return RateLimitResetCredit(
+                        id: id,
+                        resetType: credit["resetType"] as? String,
+                        status: credit["status"] as? String,
+                        grantedAt: parseDate(credit["grantedAt"]),
+                        expiresAt: parseDate(credit["expiresAt"]),
+                        title: credit["title"] as? String,
+                        description: credit["description"] as? String
+                    )
+                }
+            } else {
+                // A malformed collection is treated as unavailable detail,
+                // while the authoritative total remains usable.
+                credits = nil
+            }
+        } else {
+            credits = nil
+        }
+
+        return RateLimitResetCredits(availableCount: availableCount, credits: credits)
+    }
+
+    private func parseInteger(_ value: Any?) -> Int? {
+        guard let number = value as? NSNumber else { return nil }
+        return number.intValue
+    }
+
+    private func parseDate(_ value: Any?) -> Date? {
+        if let date = value as? Date {
+            return date
+        }
+
+        if let string = value as? String {
+            let formatter = ISO8601DateFormatter()
+            formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            return formatter.date(from: string) ?? ISO8601DateFormatter().date(from: string)
+        }
+
+        if let number = value as? NSNumber {
+            let timestamp = number.doubleValue
+            guard timestamp > 0 else { return nil }
+            return Date(timeIntervalSince1970: timestamp > 10_000_000_000 ? timestamp / 1000.0 : timestamp)
+        }
+
+        return nil
     }
 
     private func parseSingleLimitDict(_ dict: [String: Any], fallbackId: String, fallbackName: String) -> RateLimitItem? {

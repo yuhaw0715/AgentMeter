@@ -189,6 +189,12 @@ public struct UsageDashboardView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 40)
                 }
+
+                // Codex reset credits are always visible, including when the
+                // optional service field is unavailable or the quota is empty.
+                if provider == .codex {
+                    ResetCreditsCardView(resetCredits: snapshot?.resetCredits)
+                }
             }
             .padding(28)
         }
