@@ -15,6 +15,7 @@
 - **雙 Provider 官方 CLI 整合**：Codex 透過本機 `codex app-server` 的標準 JSON-RPC 2.0 通訊；Antigravity 透過 `agy -p "/usage" --output-format json` 唯讀查詢。全程不抓取瀏覽器 Cookie、不直接呼叫私有端點。
 - **動態額度解析**：自動識別並正規化 Codex 的 5 小時／每週額度，以及 Antigravity 的 Gemini Models 動態 quota buckets，無須硬編碼模型清單。
 - **Codex 重置券唯讀顯示**：從同一次 `account/rateLimits/read` 取得權威 `availableCount`，顯示逐張明細、最早到期排序、明細不足、已知零張、資訊未提供與快取過期狀態；不提供券的使用或兌換操作。
+- **Antigravity AI Credits 唯讀顯示**：從同一次官方 `/usage` 非互動 JSON 快照解析 `available_credits`／`availableCredits`；Desktop 使用獨立「AI 點數」卡片，Menu Bar 則與 Gemini Models 額度共用單一 Provider 外框。支援已知餘額（含 0）、方案不支援、CLI 未提供欄位、資訊未知與快取過期狀態。
 - **多 Provider 狀態隔離與排序一致**：各 Provider 的載入、錯誤、快取與 Menu Bar 顯示狀態彼此獨立；Menu Bar 依照同一份 Provider snapshot 順序呈現額度，與主程式保持一致，單一 CLI 異常不影響其他 Provider。
 - **Smart Cache 智慧快取**：Menu Bar 點擊秒開，具備自訂 TTL（預設 5 分鐘）與過期主動更新機制，不佔用多餘系統資源與電量。
 - **多語系與無障礙支援**：完整支援繁體中文（Traditional Chinese）與英文（English），自動遵循系統時區與 12/24 小時制，遵循系統外觀與 VoiceOver 語意導覽。
@@ -25,6 +26,7 @@
 
 - **嚴格唯讀**：應用程式採嚴格唯讀設計，僅查詢本機 CLI 輸出的額度資訊，不提供任何未授權修改或寫入管道。
 - **Codex 重置券不消耗**：只讀取 `rateLimitResetCredits`，絕不呼叫 `account/rateLimitResetCredit/consume`，不會使用、兌換或消耗重置券。
+- **Antigravity AI Credits 不管理**：不解析互動式 `/credits` TUI、不讀取 OAuth／Keychain、不呼叫未公開後端 API，也不購買、啟用或消耗 Credits，不修改 `useG1Credits` 或 AI Credit Overages。
 - **純記憶體處理**：額度資料僅暫存於記憶體中，絕不持久化儲存至本地資料庫或未經授權之磁碟空間。
 - **零遙測與資料收集**：無任何遙測分析代碼 (Telemetry/Analytics)，不收集使用記錄，不回傳任何資訊至外部伺服器。
 - **最小權限 App Sandbox**：嚴格於 macOS App Sandbox 內受限執行，僅申請必要權限。
@@ -86,7 +88,7 @@ AgentMeter 採用 Clean Architecture 與 MVVM 分層架構：
 ```text
 Sources/
 ├── AgentMeterCore/              # 核心領域、Provider 與業務邏輯庫
-│   ├── Domain/                  # RateLimitItem, Snapshot, ResetCredit, ProviderType, AgentProvider 協定
+│   ├── Domain/                  # RateLimit、Snapshot、ResetCredit、AntigravityAICredits 與 Provider 協定
 │   ├── Providers/Codex/         # Codex JSON-RPC、額度解析與環境偵測
 │   ├── Providers/Antigravity/   # agy 唯讀查詢、動態 bucket 解析與版本偵測
 │   ├── Services/                # 多 Provider Smart Cache、設定與診斷遮蔽
@@ -96,7 +98,7 @@ Sources/
     ├── App/                     # AgentMeterApp (Window + MenuBarExtra)
     ├── Resources/               # AppIcon, Bundle 資源
     └── Views/                   # 雙 Provider Dashboard、Menu Bar、設定與診斷
-        ├── Components/          # AgentMeterTheme、品牌徽章、狀態、額度與重置券卡片
+        ├── Components/          # Theme、品牌徽章、額度、重置券與 AI 點數卡片
         ├── Desktop/             # 側欄主程式、Dashboard、設定與診斷
         └── MenuBar/             # Menu Bar Popover 與快速操作
 ```
@@ -118,9 +120,9 @@ Sources/
 swift test
 ```
 
-目前共 13 套測試、41 項測試，涵蓋雙 Provider 解析、Codex 重置券三態資料與排序、唯讀 transport、快取隔離與過期呈現、環境偵測、額度排序一致性、設定、診斷遮蔽、App 生命週期與本機 CLI 整合。
+目前共 13 套測試、45 項測試，涵蓋雙 Provider 解析、Codex 重置券、Antigravity AI Credits 正數／零點／缺少欄位／格式錯誤、唯讀 CLI 參數、快取隔離與過期呈現、環境偵測、額度排序一致性、設定、診斷遮蔽、App 生命週期與本機 CLI 整合。
 
-只執行重置券相關測試：
+只執行 Codex 重置券與 Antigravity AI Credits 相關測試：
 
 ```bash
 swift test --filter 'CodexProviderTests|DomainModelTests|SmartCacheTests|LocalizationTests'
@@ -137,7 +139,10 @@ swift build -c release
 swift run AgentMeter
 ```
 
-在 Desktop 選擇 ChatGPT Codex 並重新整理；重置券會顯示在額度卡下方。點擊 Menu Bar 的 AM 圖示，可確認重置券與 Codex 額度共用單一 Provider 外框。
+Desktop 新開視窗預設為 `760 × 640pt`，並可自由縮放。選擇 ChatGPT Codex 可查看額度與重置券；選擇 Google Antigravity 可查看 Gemini Models 額度與獨立的「AI 點數」資訊卡。點擊 Menu Bar 的 AM 圖示，可在各 Provider 的單一外框中快速查看相同資訊。
+
+> [!NOTE]
+> Antigravity CLI `1.1.27` 的 `/usage --output-format json` 目前可能尚未提供 AI Credits 欄位；此時 AgentMeter 會明確顯示「目前 CLI 版本未提供 AI Credits 資訊」，Gemini Models 額度仍可正常使用。
 
 ### 建立 GitHub Release 發布產物
 

@@ -55,6 +55,22 @@ struct SmartCacheTests {
         #expect(cache.getFreshSnapshot(for: .codex, ttl: 300, currentDate: currentDate) != nil)
     }
 
+    @Test("Antigravity AI Credits share the provider snapshot TTL")
+    func testAntigravityAICreditsCacheLifecycle() {
+        let fetchedAt = Date(timeIntervalSince1970: 5_000)
+        let snapshot = RateLimitSnapshot(
+            provider: .antigravity,
+            fetchedAt: fetchedAt,
+            items: [],
+            antigravityAICredits: .available(1_000, observedAt: fetchedAt)
+        )
+        let cache = SmartCacheManager(initialSnapshot: snapshot)
+
+        #expect(cache.getFreshSnapshot(for: .antigravity, ttl: 300, currentDate: fetchedAt.addingTimeInterval(299))?.antigravityAICredits?.availableCount == 1_000)
+        #expect(cache.getFreshSnapshot(for: .antigravity, ttl: 300, currentDate: fetchedAt.addingTimeInterval(301)) == nil)
+        #expect(cache.currentSnapshot(for: .antigravity)?.antigravityAICredits?.availableCount == 1_000)
+    }
+
     @Test("SettingsManager visible limit resolution and default restore")
     func testSettingsLimitResolution() {
         let suiteName = "test.agentmeter.settings.\(UUID().uuidString)"

@@ -1,4 +1,5 @@
 import Foundation
+import CoreFoundation
 
 /// Protocol for running Antigravity CLI commands (enables unit testing).
 public protocol AntigravityCommandRunner: Sendable {
@@ -136,16 +137,30 @@ public final class AntigravityRateLimitProvider: AgentProvider, Sendable {
     public func parseRateLimits(from rootDict: [String: Any]) throws -> RateLimitSnapshot {
         // Extract groups from root.command.data.groups OR root.groups OR root.data.groups
         var groups: [[String: Any]] = []
+        var commandData: [String: Any]?
 
         if let command = rootDict["command"] as? [String: Any],
            let data = command["data"] as? [String: Any],
            let commandGroups = data["groups"] as? [[String: Any]] {
+            commandData = data
             groups = commandGroups
         } else if let data = rootDict["data"] as? [String: Any],
                   let dataGroups = data["groups"] as? [[String: Any]] {
+            commandData = data
             groups = dataGroups
         } else if let directGroups = rootDict["groups"] as? [[String: Any]] {
             groups = directGroups
+        }
+
+        // Preserve command data even when a future response contains credits
+        // but no quota groups. Only explicitly named official structured fields
+        // are accepted; interactive TUI text is never scraped.
+        if commandData == nil,
+           let command = rootDict["command"] as? [String: Any],
+           let data = command["data"] as? [String: Any] {
+            commandData = data
+        } else if commandData == nil, let data = rootDict["data"] as? [String: Any] {
+            commandData = data
         }
 
         var items: [RateLimitItem] = []
@@ -222,13 +237,59 @@ public final class AntigravityRateLimitProvider: AgentProvider, Sendable {
             return itemA.name < itemB.name
         }
 
+        let fetchedAt = Date()
+        let aiCredits = parseAICredits(from: commandData ?? rootDict, observedAt: fetchedAt)
+
         return RateLimitSnapshot(
             provider: .antigravity,
-            fetchedAt: Date(),
+            fetchedAt: fetchedAt,
             items: items,
             accountEmail: nil,
-            accountPlan: nil
+            accountPlan: nil,
+            antigravityAICredits: aiCredits
         )
+    }
+
+    /// Parses only explicit official field names found in Antigravity's
+    /// structured schema. Missing fields are a supported compatibility state.
+    private func parseAICredits(from data: [String: Any], observedAt: Date) -> AntigravityAICredits {
+        let rawValue = data["available_credits"] ?? data["availableCredits"]
+
+        guard let rawValue else {
+            return .cliFieldUnavailable(observedAt: observedAt)
+        }
+
+        if let count = nonNegativeInteger(from: rawValue) {
+            return .available(count, observedAt: observedAt)
+        }
+
+        return AntigravityAICredits(status: .unknown, observedAt: observedAt)
+    }
+
+    private func nonNegativeInteger(from value: Any) -> Int? {
+        if let number = value as? NSNumber {
+            // JSON booleans and numbers both bridge to NSNumber. Core
+            // Foundation type identity distinguishes `false` from numeric 0.
+            guard CFGetTypeID(number) != CFBooleanGetTypeID() else {
+                return nil
+            }
+            let doubleValue = number.doubleValue
+            guard doubleValue.isFinite,
+                  doubleValue >= 0,
+                  doubleValue.rounded(.towardZero) == doubleValue,
+                  doubleValue <= Double(Int.max) else {
+                return nil
+            }
+            return Int(doubleValue)
+        }
+
+        if let string = value as? String,
+           let count = Int(string),
+           count >= 0 {
+            return count
+        }
+
+        return nil
     }
 
     private func sortPriority(for name: String, id: String) -> Int {

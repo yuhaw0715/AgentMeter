@@ -6,6 +6,8 @@ final class MockAntigravityCommandRunner: AntigravityCommandRunner, @unchecked S
     var outputToReturn: String
     var exitCodeToReturn: Int32
     var shouldThrowTimeout: Bool
+    var recordedExecutable: String?
+    var recordedArguments: [String] = []
 
     init(outputToReturn: String = "", exitCodeToReturn: Int32 = 0, shouldThrowTimeout: Bool = false) {
         self.outputToReturn = outputToReturn
@@ -14,11 +16,14 @@ final class MockAntigravityCommandRunner: AntigravityCommandRunner, @unchecked S
     }
 
     func runCommand(executable: String, arguments: [String], timeout: TimeInterval) async throws -> (output: String, exitCode: Int32) {
+        recordedExecutable = executable
+        recordedArguments = arguments
         if shouldThrowTimeout {
             throw AntigravityError.timeout
         }
         return (outputToReturn, exitCodeToReturn)
     }
+
 }
 
 @Suite("Antigravity Provider & JSON Parsing Tests")
@@ -82,6 +87,23 @@ struct AntigravityProviderTests {
     }
     """
 
+    @Test("AI Credits fetch reuses the existing read-only usage command")
+    func testAICreditsFetchRemainsReadOnly() async throws {
+        let mockDetector = AntigravityEnvironmentDetector(customExecutablePath: "/bin/echo")
+        let mockRunner = MockAntigravityCommandRunner(outputToReturn: sampleValidJSON)
+        let provider = AntigravityRateLimitProvider(
+            environmentDetector: mockDetector,
+            commandRunner: mockRunner
+        )
+
+        let snapshot = try await provider.fetchRateLimits()
+
+        #expect(mockRunner.recordedExecutable == "/bin/echo")
+        #expect(mockRunner.recordedArguments == ["-p", "/usage", "--output-format", "json"])
+        #expect(!mockRunner.recordedArguments.contains("/credits"))
+        #expect(snapshot.antigravityAICredits?.status == .cliFieldUnavailable)
+    }
+
     @Test("Parses standard Gemini models and excludes Claude and GPT models")
     func testStandardGeminiParsing() throws {
         let provider = AntigravityRateLimitProvider()
@@ -90,6 +112,7 @@ struct AntigravityProviderTests {
         #expect(snapshot.provider == .antigravity)
         #expect(snapshot.accountEmail == nil)
         #expect(snapshot.accountPlan == nil)
+        #expect(snapshot.antigravityAICredits?.status == .cliFieldUnavailable)
         #expect(snapshot.items.count == 2)
 
         // 5-Hour item should be sorted first
@@ -107,6 +130,37 @@ struct AntigravityProviderTests {
         #expect(itemWeekly.usedPercentageInt == 45) // (1.0 - 0.546) * 100 = 45.4% -> 45%
         #expect(itemWeekly.remainingPercentageInt == 55)
         #expect(itemWeekly.hasResetTime == true)
+    }
+
+    @Test("Parses explicit official available credits fields without mixing them into quota buckets")
+    func testAICreditsParsing() throws {
+        let snakeCase = """
+        {"command":{"data":{"available_credits":"1000","groups":[]}}}
+        """
+        let camelCaseZero = """
+        {"command":{"data":{"availableCredits":0,"groups":[]}}}
+        """
+        let malformed = """
+        {"command":{"data":{"availableCredits":"unknown","groups":[]}}}
+        """
+        let boolean = """
+        {"command":{"data":{"availableCredits":true,"groups":[]}}}
+        """
+
+        let provider = AntigravityRateLimitProvider()
+        let positive = try provider.parseRateLimits(from: snakeCase)
+        let zero = try provider.parseRateLimits(from: camelCaseZero)
+        let unknown = try provider.parseRateLimits(from: malformed)
+        let booleanUnknown = try provider.parseRateLimits(from: boolean)
+
+        #expect(positive.antigravityAICredits?.status == .available)
+        #expect(positive.antigravityAICredits?.availableCount == 1_000)
+        #expect(positive.items.isEmpty)
+        #expect(zero.antigravityAICredits?.status == .available)
+        #expect(zero.antigravityAICredits?.availableCount == 0)
+        #expect(unknown.antigravityAICredits?.status == .unknown)
+        #expect(unknown.items.isEmpty)
+        #expect(booleanUnknown.antigravityAICredits?.status == .unknown)
     }
 
     @Test("Filters out disabled buckets and handles missing reset_time")

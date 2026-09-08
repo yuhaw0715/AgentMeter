@@ -106,6 +106,21 @@ public enum L10n {
     public static var resetCreditDetailsUnavailable: String { isTraditionalChinese ? "重置券明細未提供" : "Reset credit details unavailable" }
     public static var resetCreditExpiredWaiting: String { isTraditionalChinese ? "已到期，等待刷新" : "Expired, waiting for refresh" }
 
+    // Antigravity AI Credits
+    public static var aiCreditsTitle: String { isTraditionalChinese ? "AI 點數" : "AI Credits" }
+    public static var aiCreditsInformationUnknown: String { isTraditionalChinese ? "資訊未知" : "Information unavailable" }
+    public static var aiCreditsCLIUnavailable: String { isTraditionalChinese ? "目前 CLI 版本未提供 AI Credits 資訊" : "The current CLI version does not provide AI Credits information" }
+    public static var aiCreditsUnsupportedPlan: String { isTraditionalChinese ? "目前方案不支援" : "Not supported by the current plan" }
+    public static var cacheExpired: String { isTraditionalChinese ? "快取已過期" : "Cache expired" }
+    public static var lastUpdated: String { isTraditionalChinese ? "最後更新" : "Last updated" }
+    public static func formattedAICredits(_ count: Int) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.maximumFractionDigits = 0
+        formatter.locale = Locale(identifier: isTraditionalChinese ? "zh_TW" : "en_US")
+        return formatter.string(from: NSNumber(value: max(0, count))) ?? String(max(0, count))
+    }
+
     // Settings
     public static var settingsSubtitle: String { isTraditionalChinese ? "自訂重新整理頻率、開機啟動與執行檔路徑。" : "Customize refresh interval, launch at login, and executable paths." }
     public static var generalSection: String { isTraditionalChinese ? "一般設定" : "General" }

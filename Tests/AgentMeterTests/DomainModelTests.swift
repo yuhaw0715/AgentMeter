@@ -101,6 +101,31 @@ struct DomainModelTests {
         #expect(RateLimitResetCredit(id: "undated").isExpired(at: Date(timeIntervalSince1970: 10_000)) == false)
     }
 
+    @Test("Antigravity AI Credits preserve known zero and legacy snapshot decoding")
+    func testAntigravityAICreditsModel() throws {
+        let observedAt = Date(timeIntervalSince1970: 1_800_000_000)
+        let credits = AntigravityAICredits.available(0, observedAt: observedAt)
+        #expect(credits.status == .available)
+        #expect(credits.availableCount == 0)
+
+        let snapshot = RateLimitSnapshot(
+            provider: .antigravity,
+            items: [],
+            antigravityAICredits: credits
+        )
+        let decoded = try JSONDecoder().decode(
+            RateLimitSnapshot.self,
+            from: JSONEncoder().encode(snapshot)
+        )
+        #expect(decoded == snapshot)
+
+        let legacyJSON = """
+        {"provider":"antigravity","fetchedAt":0,"items":[]}
+        """.data(using: .utf8)!
+        let legacy = try JSONDecoder().decode(RateLimitSnapshot.self, from: legacyJSON)
+        #expect(legacy.antigravityAICredits == nil)
+    }
+
     @Test("ProviderType support filtering")
     func testProviderTypeSupport() {
         #expect(ProviderType.codex.isSupported == true)

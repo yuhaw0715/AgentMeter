@@ -195,6 +195,15 @@ public struct UsageDashboardView: View {
                 if provider == .codex {
                     ResetCreditsCardView(resetCredits: snapshot?.resetCredits)
                 }
+
+                // AI Credits are read-only and always discoverable. Older CLI
+                // versions explicitly render a compatibility state.
+                if provider == .antigravity {
+                    AntigravityAICreditsCardView(
+                        credits: snapshot?.antigravityAICredits,
+                        isStale: lastError != nil && snapshot?.antigravityAICredits?.status == .available
+                    )
+                }
             }
             .padding(28)
         }

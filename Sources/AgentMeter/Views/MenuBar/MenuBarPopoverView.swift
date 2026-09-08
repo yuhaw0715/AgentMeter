@@ -129,6 +129,7 @@ public struct MenuBarPopoverView: View {
         let error = viewModel.lastErrors[provider]
         let items = viewModel.visibleLimits(for: provider)
         let resetCredits = viewModel.snapshots[provider]?.resetCredits
+        let aiCredits = viewModel.snapshots[provider]?.antigravityAICredits
 
         VStack(alignment: .leading, spacing: 8) {
             // Section Header
@@ -233,6 +234,19 @@ public struct MenuBarPopoverView: View {
                 }
 
                 ResetCreditListView(resetCredits: resetCredits, isCompact: true)
+            }
+
+            // Antigravity uses the same provider surface; AI Credits are a
+            // compact subsection separated from model quotas by one divider.
+            if provider == .antigravity {
+                Divider()
+                    .padding(.vertical, 2)
+
+                AntigravityAICreditsContentView(
+                    credits: aiCredits,
+                    isCompact: true,
+                    isStale: error != nil && aiCredits?.status == .available
+                )
             }
         }
         .padding(10)

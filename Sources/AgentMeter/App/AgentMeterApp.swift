@@ -78,7 +78,7 @@ struct AgentMeterApp: App {
                 }
         }
         .windowResizability(.contentMinSize)
-        .defaultSize(width: 760, height: 520)
+        .defaultSize(width: 760, height: 640)
 
         // Menu Bar Extra (Option 1 shared AM Monogram visual language)
         MenuBarExtra {

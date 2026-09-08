@@ -38,6 +38,9 @@ struct LocalizationTests {
         #expect(L10n.resetCreditMissingDetails(1) == "其餘 1 張未提供明細")
         #expect(L10n.resetCreditsInformationUnavailable == "重置券資訊未提供")
         #expect(L10n.resetCreditExpiredWaiting == "已到期，等待刷新")
+        #expect(L10n.aiCreditsTitle == "AI 點數")
+        #expect(L10n.aiCreditsCLIUnavailable == "目前 CLI 版本未提供 AI Credits 資訊")
+        #expect(L10n.formattedAICredits(1_000) == "1,000")
 
         // Switch to English
         SettingsManager.shared.appLanguage = .en
@@ -53,6 +56,9 @@ struct LocalizationTests {
         #expect(L10n.resetCreditMissingDetails(1) == "1 additional credit has no details.")
         #expect(L10n.resetCreditsInformationUnavailable == "Reset credit information unavailable")
         #expect(L10n.resetCreditExpiredWaiting == "Expired, waiting for refresh")
+        #expect(L10n.aiCreditsTitle == "AI Credits")
+        #expect(L10n.aiCreditsCLIUnavailable == "The current CLI version does not provide AI Credits information")
+        #expect(L10n.formattedAICredits(1_000) == "1,000")
 
         // Restore to system
         SettingsManager.shared.appLanguage = .system
