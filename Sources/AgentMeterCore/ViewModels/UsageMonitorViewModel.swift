@@ -5,6 +5,31 @@ import Observation
 @Observable
 @MainActor
 public final class UsageMonitorViewModel {
+    private enum ProviderFetchResult: Sendable {
+        case success(
+            provider: ProviderType,
+            environmentStatus: EnvironmentStatus,
+            snapshot: RateLimitSnapshot
+        )
+        case environmentUnavailable(provider: ProviderType, status: EnvironmentStatus)
+        case failure(
+            provider: ProviderType,
+            environmentStatus: EnvironmentStatus,
+            description: String
+        )
+        case cancelled(provider: ProviderType)
+
+        var providerType: ProviderType {
+            switch self {
+            case let .success(provider, _, _),
+                 let .environmentUnavailable(provider, _),
+                 let .failure(provider, _, _),
+                 let .cancelled(provider):
+                return provider
+            }
+        }
+    }
+
     public var selectedProvider: ProviderType = .codex
     public var snapshots: [ProviderType: RateLimitSnapshot] = [:]
     public var environmentStatuses: [ProviderType: EnvironmentStatus] = [:]
@@ -149,17 +174,37 @@ public final class UsageMonitorViewModel {
 
     /// Menu Bar refresh utilizing Smart Cache per provider unless expired or forced.
     public func refreshMenuBar(force: Bool = false) async {
-        let supportedTypes = providerRegistry.supportedProviders.map { $0.providerType }
-        for p in supportedTypes {
+        var providersToFetch: [any AgentProvider] = []
+
+        for provider in providerRegistry.supportedProviders {
+            let providerType = provider.providerType
+
             if !force {
-                if let fresh = cacheManager.getFreshSnapshot(for: p, ttl: settingsManager.cacheTTLSeconds) {
-                    self.snapshots[p] = fresh
-                    self.lastRefreshTimes[p] = fresh.fetchedAt
-                    self.lastErrors[p] = nil
+                if let fresh = cacheManager.getFreshSnapshot(
+                    for: providerType,
+                    ttl: settingsManager.cacheTTLSeconds
+                ) {
+                    snapshots[providerType] = fresh
+                    lastRefreshTimes[providerType] = fresh.fetchedAt
+                    lastErrors[providerType] = nil
                     continue
                 }
             }
-            await executeFetch(for: p, bypassCache: force)
+
+            guard beginFetch(for: providerType) else { continue }
+            providersToFetch.append(provider)
+        }
+
+        await withTaskGroup(of: ProviderFetchResult.self) { group in
+            for provider in providersToFetch {
+                group.addTask {
+                    await Self.performFetch(using: provider)
+                }
+            }
+
+            for await result in group {
+                apply(result)
+            }
         }
     }
 
@@ -171,35 +216,90 @@ public final class UsageMonitorViewModel {
 
     /// Executes rate limit fetching for a specific provider.
     public func executeFetch(for providerType: ProviderType, bypassCache: Bool) async {
-        guard !refreshingProviders.contains(providerType) else { return }
-
-        refreshingProviders.insert(providerType)
-        lastErrors[providerType] = nil
-
-        await checkEnvironment(for: providerType)
-        guard let status = environmentStatuses[providerType], status.isReady else {
-            refreshingProviders.remove(providerType)
+        guard let provider = providerRegistry.provider(for: providerType) else {
+            lastErrors[providerType] = "Provider \(providerType.displayName) not registered"
             return
         }
 
-        guard let provider = providerRegistry.provider(for: providerType) else {
-            lastErrors[providerType] = "Provider \(providerType.displayName) not registered"
-            refreshingProviders.remove(providerType)
-            return
+        guard beginFetch(for: providerType) else { return }
+        let result = await Self.performFetch(using: provider)
+        apply(result)
+    }
+
+    /// Atomically reserves a provider fetch on the Main Actor.
+    private func beginFetch(for providerType: ProviderType) -> Bool {
+        guard !refreshingProviders.contains(providerType) else { return false }
+        refreshingProviders.insert(providerType)
+        lastErrors[providerType] = nil
+        return true
+    }
+
+    /// Performs provider I/O outside Main Actor state management.
+    private nonisolated static func performFetch(
+        using provider: any AgentProvider
+    ) async -> ProviderFetchResult {
+        let providerType = provider.providerType
+
+        guard !Task.isCancelled else {
+            return .cancelled(provider: providerType)
+        }
+
+        let environmentStatus = await provider.checkEnvironment()
+        guard !Task.isCancelled else {
+            return .cancelled(provider: providerType)
+        }
+        guard environmentStatus.isReady else {
+            return .environmentUnavailable(provider: providerType, status: environmentStatus)
         }
 
         do {
             let snapshot = try await provider.fetchRateLimits()
-            self.snapshots[providerType] = snapshot
-            self.lastRefreshTimes[providerType] = snapshot.fetchedAt
-            self.cacheManager.store(snapshot)
-            self.lastErrors[providerType] = nil
+            guard !Task.isCancelled else {
+                return .cancelled(provider: providerType)
+            }
+            return .success(
+                provider: providerType,
+                environmentStatus: environmentStatus,
+                snapshot: snapshot
+            )
+        } catch is CancellationError {
+            return .cancelled(provider: providerType)
         } catch {
-            // Invalidate cache for this provider to avoid presenting stale data as current
-            self.cacheManager.invalidate(for: providerType)
-            self.lastErrors[providerType] = error.localizedDescription
+            guard !Task.isCancelled else {
+                return .cancelled(provider: providerType)
+            }
+            return .failure(
+                provider: providerType,
+                environmentStatus: environmentStatus,
+                description: error.localizedDescription
+            )
         }
+    }
 
-        refreshingProviders.remove(providerType)
+    /// Applies one provider result progressively and clears its in-flight marker.
+    private func apply(_ result: ProviderFetchResult) {
+        let providerType = result.providerType
+        defer { refreshingProviders.remove(providerType) }
+
+        switch result {
+        case let .success(_, environmentStatus, snapshot):
+            environmentStatuses[providerType] = environmentStatus
+            snapshots[providerType] = snapshot
+            lastRefreshTimes[providerType] = snapshot.fetchedAt
+            cacheManager.store(snapshot)
+            lastErrors[providerType] = nil
+
+        case let .environmentUnavailable(_, status):
+            environmentStatuses[providerType] = status
+
+        case let .failure(_, environmentStatus, description):
+            environmentStatuses[providerType] = environmentStatus
+            // Do not present the retained ViewModel snapshot as fresh after a failed fetch.
+            cacheManager.invalidate(for: providerType)
+            lastErrors[providerType] = description
+
+        case .cancelled:
+            break
+        }
     }
 }

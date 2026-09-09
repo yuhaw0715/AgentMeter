@@ -17,7 +17,8 @@
 - **Codex 重置券唯讀顯示**：從同一次 `account/rateLimits/read` 取得權威 `availableCount`，顯示逐張明細、最早到期排序、明細不足、已知零張、資訊未提供與快取過期狀態；不提供券的使用或兌換操作。
 - **Antigravity AI Credits 唯讀顯示**：從同一次官方 `/usage` 非互動 JSON 快照解析 `available_credits`／`availableCredits`；Desktop 使用獨立「AI 點數」卡片，Menu Bar 則與 Gemini Models 額度共用單一 Provider 外框。支援已知餘額（含 0）、方案不支援、CLI 未提供欄位、資訊未知與快取過期狀態。
 - **多 Provider 狀態隔離與排序一致**：各 Provider 的載入、錯誤、快取與 Menu Bar 顯示狀態彼此獨立；Menu Bar 依照同一份 Provider snapshot 順序呈現額度，與主程式保持一致，單一 CLI 異常不影響其他 Provider。
-- **Smart Cache 智慧快取**：Menu Bar 點擊秒開，具備自訂 TTL（預設 5 分鐘）與過期主動更新機制，不佔用多餘系統資源與電量。
+- **非同步並行額度刷新**：需要更新的 Provider 會同時查詢，先完成者立即更新自己的區塊；同 Provider 重複請求會去重，局部失敗不會阻塞其他 Provider。
+- **Smart Cache 智慧快取**：Menu Bar 點擊秒開，具備自訂 TTL（預設 5 分鐘）與過期主動更新機制，不佔用多餘系統資源與電量；有效快取會立即顯示，僅對需要更新的 Provider 發起查詢。
 - **多語系與無障礙支援**：完整支援繁體中文（Traditional Chinese）與英文（English），自動遵循系統時區與 12/24 小時制，遵循系統外觀與 VoiceOver 語意導覽。
 
 ---
@@ -120,7 +121,7 @@ Sources/
 swift test
 ```
 
-目前共 13 套測試、45 項測試，涵蓋雙 Provider 解析、Codex 重置券、Antigravity AI Credits 正數／零點／缺少欄位／格式錯誤、唯讀 CLI 參數、快取隔離與過期呈現、環境偵測、額度排序一致性、設定、診斷遮蔽、App 生命週期與本機 CLI 整合。
+目前共 14 套測試、51 項測試，涵蓋雙 Provider 解析、Codex 重置券、Antigravity AI Credits 正數／零點／缺少欄位／格式錯誤、唯讀 CLI 參數、快取隔離與過期呈現、Provider 並行刷新與請求去重、漸進式結果提交、取消與錯誤隔離、環境偵測、額度排序一致性、設定、診斷遮蔽、App 生命週期與本機 CLI 整合。
 
 只執行 Codex 重置券與 Antigravity AI Credits 相關測試：
 
