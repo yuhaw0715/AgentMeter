@@ -156,7 +156,7 @@ Desktop 新開視窗預設為 `760 × 640pt`，並可自由縮放。選擇 ChatG
 腳本會執行 Release build、組裝並以 ad-hoc identity 簽署 `AgentMeter.app`、驗證 Bundle 與 ZIP 結構，成功後移除中間 App Bundle，最後只保留發布產物：
 
 ```text
-releases/AgentMeter-v1.1.0.zip
+releases/AgentMeter-v1.2.0.zip
 ```
 
 腳本也會輸出 ZIP 的 SHA-256；發布到 GitHub Release 或更新 Homebrew Cask 時，請以該次執行輸出的 checksum 為準。
@@ -173,10 +173,10 @@ CODESIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)" \
 建立與 `Resources/Info.plist` 版本一致的 Git tag 後，可將 ZIP 上傳至 GitHub Release：
 
 ```bash
-gh release create v1.1.0 \
-  releases/AgentMeter-v1.1.0.zip \
+gh release create v1.2.0 \
+  releases/AgentMeter-v1.2.0.zip \
   --verify-tag \
-  --title "AgentMeter 1.1.0" \
+  --title "AgentMeter 1.2.0" \
   --generate-notes
 ```
 
